@@ -4,17 +4,40 @@ Panduan ini untuk menjalankan **Intent & Agent Management Console** di server in
 
 ## Prasyarat
 
-- Node.js 20.19 atau lebih baru.
+- Node.js 20.19 atau lebih baru. Disarankan pakai `nvm` supaya Node global server tidak berubah.
 - Server berada di jaringan yang bisa akses:
   - `http://172.16.210.244:8080`
   - `http://172.16.210.244:5678`
 - Port aplikasi dibuka di firewall, default `5173`.
+
+## Setup Node Aman dengan nvm
+
+Jalankan sebagai user yang akan menjalankan app, misalnya `litmas`. Ini tidak mengubah Node global `/usr/bin/node` dan tidak mengganggu service lain.
+
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+source ~/.bashrc
+```
+
+Setelah repo di-clone, `.nvmrc` akan menentukan versi Node yang dipakai project:
+
+```bash
+cd interface-intent
+nvm install
+nvm use
+node -v
+which node
+```
+
+Output `which node` yang aman harus mengarah ke home user, contoh `/home/litmas/.nvm/versions/node/.../bin/node`, bukan `/usr/bin/node`.
 
 ## Deploy Cepat dengan Node
 
 ```bash
 git clone https://github.com/fatah69/interface-intent.git
 cd interface-intent
+nvm install
+nvm use
 npm ci
 cp .env.production.example .env.production
 npm run build
@@ -49,6 +72,7 @@ Biarkan `VITE_API_BASE_URL=` kosong supaya browser memanggil relative path `/api
 Untuk server Linux, pakai process manager seperti PM2:
 
 ```bash
+nvm use
 npm install -g pm2
 pm2 start server-setup/prod-server.mjs --name interface-intent
 pm2 save
@@ -70,6 +94,8 @@ Untuk update versi baru:
 
 ```bash
 git pull
+nvm install
+nvm use
 npm ci
 npm run build
 pm2 restart interface-intent

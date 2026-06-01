@@ -25,6 +25,7 @@ There is intentionally no mock data. Empty states mean the API returned no data,
 ## Build, Test, and Development Commands
 
 - `npm install` installs dependencies.
+- `nvm install && nvm use` selects the project Node version from `.nvmrc` without changing the server/global Node installation.
 - `npm run dev` starts Vite on `0.0.0.0:5173`, so teammates on the same WiFi can open the Network URL.
 - `npm run build` verifies the production bundle.
 - `npm start` serves the production `dist` build through `server-setup/prod-server.mjs` and proxies `/api`, `/chat-webhook`, and `/vector-webhook`.

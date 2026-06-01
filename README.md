@@ -62,6 +62,8 @@ Use this rule of thumb when changing the app:
 Install dependencies:
 
 ```bash
+nvm install
+nvm use
 npm install
 ```
 
@@ -120,6 +122,8 @@ Recommended internal deployment uses the production server in `server-setup/prod
 ```bash
 git clone https://github.com/fatah69/interface-intent.git
 cd interface-intent
+nvm install
+nvm use
 npm ci
 cp .env.production.example .env.production
 npm run build
