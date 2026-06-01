@@ -140,7 +140,7 @@ Endpoint berikut sudah dites dan mengembalikan `404`, atau tidak muncul di Swagg
 - Tidak ada mock data di aplikasi.
 - Jika endpoint gagal, UI menampilkan data kosong dan status error, bukan mengisi data palsu.
 - Tombol Add/Edit/Delete hanya aktif jika method terkait tersedia di konfigurasi API frontend.
-- Tombol Edit untuk resource CRUD lengkap mengambil data detail dari `GET /api/.../{id}` sebelum membuka form.
+- Tombol Edit/View untuk resource CRUD lengkap mencoba mengambil data detail dari `GET /api/.../{id}`. Jika detail endpoint mengembalikan 404 walaupun list endpoint memiliki row tersebut, UI fallback ke data list agar form/detail tetap bisa dibuka.
 - Data collection existing diambil dari `semantic_search.collection_name` melalui endpoint `/api/semantic-searches/`.
 - Halaman Vector Collections melakukan `POST /api/semantic-searches/` untuk mendaftarkan collection baru agar muncul juga di halaman Semantic Search. Setelah terdaftar, `POST` text, `POST` PDF, atau `PUT` sync ke n8n memakai `collection_name` yang sama untuk mengisi PGVector.
 - Halaman AI Chat memakai respons real dari `/chat-webhook`; tidak ada fallback jawaban mock. Jika n8n mengembalikan `executionStarted`, UI menampilkan status workflow yang lebih readable, bukan JSON mentah.

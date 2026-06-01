@@ -66,17 +66,26 @@ export function useResourceCrud({ resource, data, loadData, setApiStatus }) {
     setErrors([]);
   }
 
+  async function getDetailOrRow(row) {
+    if (!api.can(resource, 'detail')) return row;
+    try {
+      return normalizeRecord(await api.detail(resource, row.id));
+    } catch {
+      setApiStatus(`Endpoint detail ${config.singular} gagal, memakai data dari list.`);
+      return row;
+    }
+  }
+
   async function openEdit(row) {
     if (!capabilities.canUpdate) return;
     setErrors([]);
     setBusy(true);
     try {
-      const detail = api.can(resource, 'detail') ? normalizeRecord(await api.detail(resource, row.id)) : row;
+      const detail = await getDetailOrRow(row);
       setModal({ mode: 'edit', resource, id: row.id });
       setForm({ ...emptyRecord(config.fields), ...row, ...detail });
     } catch (error) {
-      setErrors([`Gagal mengambil detail dari API: ${error.message || 'request gagal'}.`]);
-      setApiStatus('Form edit tidak dibuka karena endpoint detail gagal merespons.');
+      setErrors([`Gagal membuka form edit: ${error.message || 'request gagal'}.`]);
     } finally {
       setBusy(false);
     }
@@ -86,10 +95,9 @@ export function useResourceCrud({ resource, data, loadData, setApiStatus }) {
     setErrors([]);
     setBusy(true);
     try {
-      const detail = api.can(resource, 'detail') ? normalizeRecord(await api.detail(resource, row.id)) : row;
+      const detail = await getDetailOrRow(row);
       setDrawer({ resource, row: { ...row, ...detail } });
     } catch (error) {
-      setErrors([`Gagal mengambil detail dari API: ${error.message || 'request gagal'}.`]);
       setDrawer({ resource, row });
     } finally {
       setBusy(false);

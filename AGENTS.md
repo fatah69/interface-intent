@@ -80,6 +80,8 @@ Do not add fake client-side data for unavailable endpoints. Disable unsupported 
 
 For `/vector-webhook` testing, avoid real write tests unless a cleanup endpoint or database credential is available. If a test row is inserted into `n8n_vectors`, delete it by exact test text from the PGVector database before handoff. Existing smoke-test cleanup SQL is documented in `docs/VECTOR_TEST_CLEANUP.md`.
 
+Some Swagger detail endpoints can return 404 for rows that are present in list endpoints. View/Edit flows should fall back to the list row instead of blocking the user.
+
 ## Coding Style & Naming Conventions
 
 Use React functional components and hooks. Keep module resource keys stable because they connect UI definitions to `src/api/client.js`: `chat`, `vectorCollections`, `agents`, `actions`, `intents`, `externalData`, `semanticSearches`, `utilities`, and `mappings`.
