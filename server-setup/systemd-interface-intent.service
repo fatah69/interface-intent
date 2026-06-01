@@ -1,0 +1,14 @@
+[Unit]
+Description=Intent & Agent Management Console
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/interface-intent
+ExecStart=/usr/bin/node /opt/interface-intent/server-setup/prod-server.mjs
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target

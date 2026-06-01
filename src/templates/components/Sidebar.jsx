@@ -1,0 +1,105 @@
+﻿import { useState } from 'react';
+import { Braces, ChevronDown, ChevronRight } from 'lucide-react';
+import { api } from '../../api/client';
+import { modules, navGroups } from '../../config/resources';
+
+function NavButton({ item, active, data, onSelect, openBranches, onToggleBranch, nested = false }) {
+  const config = modules[item.key];
+  const Icon = config.icon;
+  const hasChildren = item.children?.length > 0;
+  const isOpen = openBranches[item.key] ?? false;
+  const ToggleIcon = isOpen ? ChevronDown : ChevronRight;
+  const canRead = api.can(item.key, 'read');
+  const showCount = !['chat', 'vectorCollections'].includes(item.key);
+  const countLabel = canRead ? String(data[item.key]?.length || 0) : '-';
+
+  function selectItem() {
+    onSelect(item.key);
+    if (hasChildren && !isOpen) onToggleBranch(item.key);
+  }
+
+  function toggleSubmenu(event) {
+    event.stopPropagation();
+    onToggleBranch(item.key);
+  }
+
+  return (
+    <div className={nested ? 'nav-branch nested' : 'nav-branch'}>
+      <button className={`${active === item.key ? 'nav-item active' : 'nav-item'}${hasChildren ? ' has-children' : ''}`} onClick={selectItem}>
+        <Icon size={18} />
+        <span>{config.title}</span>
+        {showCount && <small title={canRead ? `${countLabel} records loaded` : 'List endpoint unavailable'}>{countLabel}</small>}
+        {hasChildren && (
+          <span className="nav-chevron" onClick={toggleSubmenu} title={isOpen ? 'Hide submenu' : 'Show submenu'}>
+            <ToggleIcon size={15} />
+          </span>
+        )}
+      </button>
+      {hasChildren && isOpen && (
+        <div className="sub-nav">
+          {item.children.map((child) => (
+            <NavButton
+              key={child.key}
+              item={child}
+              active={active}
+              data={data}
+              onSelect={onSelect}
+              openBranches={openBranches}
+              onToggleBranch={onToggleBranch}
+              nested
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function Sidebar({ active, data, onSelect }) {
+  const [openGroups, setOpenGroups] = useState({ 'AI-Configuration': true });
+  const [openBranches, setOpenBranches] = useState({ actions: true });
+
+  function toggleGroup(title) {
+    setOpenGroups((current) => ({ ...current, [title]: !(current[title] ?? true) }));
+  }
+
+  function toggleBranch(key) {
+    setOpenBranches((current) => ({ ...current, [key]: !(current[key] ?? false) }));
+  }
+
+  return (
+    <aside className="sidebar">
+      <div className="brand">
+        <div className="brand-mark"><Braces size={22} /></div>
+        <div>
+          <strong>Intent & Agent</strong>
+          <span>Management Console</span>
+        </div>
+      </div>
+
+      <nav>
+        {navGroups.map((group) => (
+          <section className="nav-section" key={group.title}>
+            <button className="nav-section-toggle" type="button" onClick={() => toggleGroup(group.title)}>
+              <span>{group.title}</span>
+              {(openGroups[group.title] ?? true) ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+            </button>
+            {(openGroups[group.title] ?? true) && group.items.map((item) => (
+              <NavButton
+                key={item.key}
+                item={item}
+                active={active}
+                data={data}
+                onSelect={onSelect}
+                openBranches={openBranches}
+                onToggleBranch={toggleBranch}
+              />
+            ))}
+          </section>
+        ))}
+      </nav>
+    </aside>
+  );
+}
+
+

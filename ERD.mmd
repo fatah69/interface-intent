@@ -1,0 +1,75 @@
+﻿erDiagram
+    n8n_vector_collections {
+        uuid uuid PK "NN"
+        character_varying name
+        jsonb cmetadata
+    }
+
+    n8n_vectors {
+        uuid id PK "NN"
+        text text
+        jsonb metadata
+        public_vector embedding
+        uuid collection_id FK
+    }
+
+    ai_agent {
+        integer id PK "NN"
+        character_varying agent_name
+        json default_param
+        protocol_requests protocol_request
+        json header
+        character_varying host
+    }
+
+    external_data {
+        integer id PK "NN"
+        protocol_requests protocol_request "NN"
+        json header
+        character_varying host "NN"
+        json default_param
+    }
+
+    semantic_search {
+        integer id PK "NN"
+        character_varying collection_name
+    }
+
+    utility {
+        integer id PK "NN"
+        character_varying key
+        character_varying value
+    }
+
+    action {
+        integer id PK "NN"
+        action_types action_type
+        integer semantic_search_id FK
+        integer external_data_id FK
+        integer ai_agent_id FK
+        json parameter_needed
+    }
+
+    ai_agent_utility {
+        integer id PK "NN"
+        integer ai_agent_id FK
+        integer utility_id FK
+        character_varying client_id
+    }
+
+    intent {
+        integer id PK "NN"
+        character_varying context
+        integer action_id FK
+    }
+
+    n8n_vector_collections ||--o{ n8n_vectors : "uuid -> collection_id"
+
+    ai_agent ||--o{ action : "id -> ai_agent_id"
+    external_data ||--o{ action : "id -> external_data_id"
+    semantic_search ||--o{ action : "id -> semantic_search_id"
+
+    action ||--o{ intent : "id -> action_id"
+
+    ai_agent ||--o{ ai_agent_utility : "id -> ai_agent_id"
+    utility ||--o{ ai_agent_utility : "id -> utility_id"
