@@ -148,6 +148,7 @@ export function useResourceCrud({ resource, data, loadData, setApiStatus }) {
     }
 
     const payload = preparePayload(resource, form);
+    setBusy(true);
     try {
       if (modal.mode === 'create') await api.create(resource, payload);
       if (modal.mode === 'edit') await api.update(resource, modal.id, payload);
@@ -157,6 +158,8 @@ export function useResourceCrud({ resource, data, loadData, setApiStatus }) {
       setErrors([`Gagal menyimpan ke API: ${error.message || 'request gagal'}.`]);
       setApiStatus('Perubahan tidak disimpan karena API gagal merespons.');
       return;
+    } finally {
+      setBusy(false);
     }
     setModal(null);
   }

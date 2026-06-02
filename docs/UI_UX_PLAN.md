@@ -37,6 +37,7 @@ Implemented on 2026-06-01:
 - Shared CRUD tables include a footer with rows-per-page control, record range text, First/Previous/numbered page/Next/Last controls, and no `All` option.
 - Shared CRUD table empty states now distinguish between no loaded data and no search results.
 - Add/Edit/Delete controls are disabled when Swagger does not expose the matching method.
+- CRUD modals autofocus the first field, support Escape-to-close when idle, use resource-specific submit labels, and disable fields/buttons while create/update requests are in progress.
 - AI Chat page posts to the n8n webhook through `/chat-webhook` and renders the real response.
 - AI Chat sends `chatInput`, `message`, and `sessionId` to the n8n webhook; collection routing is handled by the n8n prompt/chat logic, not by a frontend selector.
 - AI Chat persists the current `sessionId` and message list in `sessionStorage`, so the conversation survives route changes and refreshes in the same browser session.

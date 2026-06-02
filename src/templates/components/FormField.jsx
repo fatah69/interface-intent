@@ -1,15 +1,15 @@
 import { FileJson } from 'lucide-react';
 import { labelFor } from '../../utils/resourceUtils.jsx';
 
-export function FormField({ field, value, data, error, onChange, onFormat }) {
+export function FormField({ field, value, data, error, autoFocus = false, disabled = false, onChange, onFormat }) {
   const wide = field.type === 'textarea' || field.type === 'json';
   return (
     <label className={wide ? 'wide' : ''}>
       <span>{field.label}</span>
-      <Field field={field} value={value} data={data} onChange={onChange} />
+      <Field field={field} value={value} data={data} autoFocus={autoFocus} disabled={disabled} onChange={onChange} />
       {field.type === 'json' && (
         <div className="field-actions">
-          <button type="button" className="text-button" onClick={onFormat} disabled={Boolean(error)}>
+          <button type="button" className="text-button" onClick={onFormat} disabled={disabled || Boolean(error)}>
             <FileJson size={14} /> Format JSON
           </button>
           <span className={error ? 'field-error' : 'field-valid'}>{error || 'JSON valid'}</span>
@@ -19,10 +19,10 @@ export function FormField({ field, value, data, error, onChange, onFormat }) {
   );
 }
 
-function Field({ field, value, data, onChange }) {
+function Field({ field, value, data, autoFocus, disabled, onChange }) {
   if (field.type === 'select') {
     return (
-      <select value={value} onChange={(event) => onChange(event.target.value)}>
+      <select value={value} onChange={(event) => onChange(event.target.value)} autoFocus={autoFocus} disabled={disabled}>
         <option value="">Select option</option>
         {field.options.map((option) => <option key={option} value={option}>{option}</option>)}
       </select>
@@ -31,7 +31,7 @@ function Field({ field, value, data, onChange }) {
 
   if (field.type === 'relation') {
     return (
-      <select value={value ?? ''} onChange={(event) => onChange(event.target.value)}>
+      <select value={value ?? ''} onChange={(event) => onChange(event.target.value)} autoFocus={autoFocus} disabled={disabled}>
         <option value="">None</option>
         {(data[field.resource] || []).map((item) => (
           <option key={item.id ?? item.uuid} value={item.id ?? item.uuid}>{labelFor(field.resource, item.id ?? item.uuid, data)}</option>
@@ -41,8 +41,8 @@ function Field({ field, value, data, onChange }) {
   }
 
   if (field.type === 'textarea' || field.type === 'json') {
-    return <textarea rows={field.type === 'json' ? 5 : 3} value={value} placeholder={field.placeholder || ''} onChange={(event) => onChange(event.target.value)} />;
+    return <textarea rows={field.type === 'json' ? 5 : 3} value={value} placeholder={field.placeholder || ''} onChange={(event) => onChange(event.target.value)} autoFocus={autoFocus} disabled={disabled} />;
   }
 
-  return <input value={value} placeholder={field.placeholder || ''} onChange={(event) => onChange(event.target.value)} />;
+  return <input value={value} placeholder={field.placeholder || ''} onChange={(event) => onChange(event.target.value)} autoFocus={autoFocus} disabled={disabled} />;
 }

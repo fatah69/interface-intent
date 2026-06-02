@@ -86,13 +86,13 @@ Form modal sudah cukup usable, tetapi pengalaman input masih bisa dibuat lebih m
 
 Rekomendasi:
 
-- Autofocus ke field pertama saat modal dibuka.
-- Tombol submit lebih spesifik, misalnya `Create Action` atau `Update Action`, bukan hanya `Save`.
-- Disable submit saat proses create/update sedang berjalan.
-- Escape key untuk close modal.
-- Untuk relation dropdown yang panjang, nanti bisa dibuat searchable select.
+- Selesai: autofocus ke field pertama saat modal dibuka.
+- Selesai: tombol submit lebih spesifik, misalnya `Create Action` atau `Update Action`, bukan hanya `Save`.
+- Selesai: disable field dan submit saat proses create/update sedang berjalan.
+- Selesai: Escape key untuk close modal saat form tidak sedang menyimpan.
+- Follow-up: relation dropdown yang panjang nanti bisa dibuat searchable select.
 
-Prioritas: sedang.
+Prioritas: sedang. Status: implemented untuk polish inti.
 
 ### 6. Detail drawer masih basic
 
@@ -179,4 +179,3 @@ Dashboard ini idealnya terasa seperti internal admin console yang siap dipakai:
 - Error dan success state eksplisit.
 - Chat demo terasa natural untuk customer.
 - Fitur teknis tetap tersedia untuk tim internal, tetapi tidak mengganggu user umum.
-

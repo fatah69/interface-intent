@@ -1,21 +1,35 @@
+import { useEffect } from 'react';
 import { Info, X } from 'lucide-react';
 import { modules } from '../../config/resources';
 import { validateJson } from '../../utils/resourceUtils.jsx';
 import { FormField } from './FormField';
 
-export function ResourceModal({ modal, form, errors, visibleFields, data, onChangeField, onFormatJson, onClose, onSubmit }) {
+export function ResourceModal({ modal, form, errors, visibleFields, data, busy = false, onChangeField, onFormatJson, onClose, onSubmit }) {
+  useEffect(() => {
+    if (!modal || busy) return undefined;
+
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') onClose();
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [busy, modal, onClose]);
+
   if (!modal) return null;
   const config = modules[modal.resource];
+  const actionLabel = modal.mode === 'create' ? 'Create' : 'Update';
+  const submitLabel = `${actionLabel} ${config.singular}`;
 
   return (
     <div className="modal-backdrop" role="presentation">
-      <form className="modal" onSubmit={onSubmit}>
+      <form className="modal" onSubmit={onSubmit} aria-busy={busy}>
         <div className="modal-header">
           <div>
-            <p className="eyebrow">{modal.mode === 'create' ? 'Create' : 'Update'}</p>
+            <p className="eyebrow">{actionLabel}</p>
             <h2>{config.singular}</h2>
           </div>
-          <button type="button" className="ghost-button" onClick={onClose}>
+          <button type="button" className="ghost-button" onClick={onClose} disabled={busy} title="Close modal">
             <X size={18} />
           </button>
         </div>
@@ -31,13 +45,15 @@ export function ResourceModal({ modal, form, errors, visibleFields, data, onChan
         )}
 
         <div className="form-grid">
-          {visibleFields.map((field) => (
+          {visibleFields.map((field, index) => (
             <FormField
               key={field.key}
               field={field}
               value={form[field.key] ?? ''}
               data={data}
               error={field.type === 'json' ? validateJson(form[field.key]) : ''}
+              autoFocus={index === 0}
+              disabled={busy}
               onChange={(value) => onChangeField(field, value)}
               onFormat={() => onFormatJson(field)}
             />
@@ -45,8 +61,8 @@ export function ResourceModal({ modal, form, errors, visibleFields, data, onChan
         </div>
 
         <div className="modal-actions">
-          <button type="button" className="secondary-button" onClick={onClose}>Cancel</button>
-          <button type="submit" className="primary-button">Save</button>
+          <button type="button" className="secondary-button" onClick={onClose} disabled={busy}>Cancel</button>
+          <button type="submit" className="primary-button" disabled={busy}>{busy ? 'Saving...' : submitLabel}</button>
         </div>
       </form>
     </div>

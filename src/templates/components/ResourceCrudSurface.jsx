@@ -53,6 +53,7 @@ export function ResourceCrudSurface({ resource, data, loading, crud, toolbarSlot
         errors={crud.errors}
         visibleFields={crud.visibleFormFields}
         data={data}
+        busy={crud.busy}
         onChangeField={crud.updateFormField}
         onFormatJson={crud.formatJsonField}
         onClose={() => crud.setModal(null)}

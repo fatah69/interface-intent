@@ -46,7 +46,7 @@ export function VectorCollectionPanel({ collections, loading }) {
   const [file, setFile] = useState(null);
   const [dragActive, setDragActive] = useState(false);
   const [activeMode, setActiveMode] = useState('text');
-  const [status, setStatus] = useState('Pilih collection sebelum upload.');
+  const [status, setStatus] = useState('');
   const [statusType, setStatusType] = useState('neutral');
   const [loadingAction, setLoadingAction] = useState('');
   const fileInputRef = useRef(null);
@@ -83,6 +83,28 @@ export function VectorCollectionPanel({ collections, loading }) {
   function setError(message) {
     setStatusType('error');
     setStatus(message);
+  }
+
+  function resetStatus() {
+    setStatusType('neutral');
+    setStatus('');
+  }
+
+  function selectCollection(option) {
+    setCollectionName(option);
+    setCollectionQuery('');
+    setPickerOpen(false);
+    resetStatus();
+  }
+
+  function switchMode(mode) {
+    setActiveMode(mode);
+    resetStatus();
+  }
+
+  function updateText(value) {
+    setText(value);
+    if (status) resetStatus();
   }
 
   function ensureCollection() {
@@ -152,12 +174,14 @@ export function VectorCollectionPanel({ collections, loading }) {
 
     if (!isPdf) {
       setFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
       setError('File harus PDF.');
       return;
     }
 
     if (selectedFile.size > maxSize) {
       setFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
       setError('Ukuran PDF maksimal 10 MB.');
       return;
     }
@@ -170,6 +194,7 @@ export function VectorCollectionPanel({ collections, loading }) {
   function clearPdfFile() {
     setFile(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    resetStatus();
   }
 
   function handlePdfDrop(event) {
@@ -181,6 +206,13 @@ export function VectorCollectionPanel({ collections, loading }) {
 
   const busy = loading || loadingAction !== '';
   const uploadDisabled = busy || !hasCollections;
+  const hasText = text.trim().length > 0;
+  const idleStatus = !collectionName
+    ? 'Pilih collection sebelum upload.'
+    : activeMode === 'text'
+      ? (hasText ? 'Siap upload.' : 'Isi text untuk upload.')
+      : (file ? 'Siap upload.' : 'Pilih atau drop PDF untuk upload.');
+  const statusMessage = status || idleStatus;
 
   return (
     <section className="vector-console">
@@ -219,11 +251,7 @@ export function VectorCollectionPanel({ collections, loading }) {
                     key={option}
                     className={option === collectionName ? 'collection-option active' : 'collection-option'}
                     type="button"
-                    onClick={() => {
-                      setCollectionName(option);
-                      setCollectionQuery('');
-                      setPickerOpen(false);
-                    }}
+                    onClick={() => selectCollection(option)}
                   >
                     <span>{option}</span>
                     {option === collectionName && <Check size={16} />}
@@ -247,8 +275,8 @@ export function VectorCollectionPanel({ collections, loading }) {
           <>
             <div className="vector-operation-head">
               <div className="vector-tabs" role="tablist" aria-label="Vector collection operation">
-                <button className={activeMode === 'text' ? 'active' : ''} type="button" onClick={() => setActiveMode('text')}>Text</button>
-                <button className={activeMode === 'pdf' ? 'active' : ''} type="button" onClick={() => setActiveMode('pdf')}>PDF</button>
+                <button className={activeMode === 'text' ? 'active' : ''} type="button" onClick={() => switchMode('text')}>Text</button>
+                <button className={activeMode === 'pdf' ? 'active' : ''} type="button" onClick={() => switchMode('pdf')}>PDF</button>
               </div>
               <div className="vector-method">
                 <span>{activeMeta.method}</span>
@@ -262,8 +290,8 @@ export function VectorCollectionPanel({ collections, loading }) {
                   <h2>{activeMeta.title}</h2>
                 </div>
                 <div className="vector-limit-note">Maksimal 50.000 karakter.</div>
-                <textarea value={text} onChange={(event) => setText(event.target.value)} placeholder="Tulis knowledge yang akan dimasukkan ke collection" rows={6} disabled={uploadDisabled} />
-                <button className="primary-button" type="submit" disabled={uploadDisabled || !file}>
+                <textarea value={text} onChange={(event) => updateText(event.target.value)} placeholder="Tulis knowledge yang akan dimasukkan ke collection" rows={6} disabled={uploadDisabled} />
+                <button className="primary-button" type="submit" disabled={uploadDisabled || !text.trim()}>
                   <Send size={16} />
                   {loadingAction === 'text' ? 'Sending...' : 'Upload Text'}
                 </button>
@@ -308,7 +336,7 @@ export function VectorCollectionPanel({ collections, loading }) {
                     </button>
                   )}
                 </div>
-                <button className="primary-button" type="submit" disabled={uploadDisabled}>
+                <button className="primary-button" type="submit" disabled={uploadDisabled || !file}>
                   <FileUp size={16} />
                   {loadingAction === 'pdf' ? 'Uploading...' : 'Upload PDF'}
                 </button>
@@ -318,7 +346,7 @@ export function VectorCollectionPanel({ collections, loading }) {
         )}
       </div>
 
-      <div className={`vector-status ${statusType}`}>{status}</div>
+      <div className={`vector-status ${statusType}`}>{statusMessage}</div>
     </section>
   );
 }
