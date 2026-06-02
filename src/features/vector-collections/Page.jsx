@@ -10,12 +10,12 @@ export function VectorCollectionsPage({ data, apiStatus, loading, loadData }) {
     <div className="vector-page">
       <PageHeader
         config={vectorCollectionPage}
-        eyebrow="n8n PGVector"
+        eyebrow="Knowledge Upload"
         countLabel={`${collectionCount} collections`}
         onRefresh={loadData}
       />
       <StatusStrip warning={statusWarning}>{loading ? 'Memuat data collection...' : apiStatus}</StatusStrip>
-      <VectorCollectionPanel collections={data.semanticSearches || []} loading={loading} loadData={loadData} />
+      <VectorCollectionPanel collections={data.semanticSearches || []} loading={loading} />
     </div>
   );
 }

@@ -24,6 +24,22 @@ export const moduleOrder = ['intents', 'actions', 'externalData', 'agents', 'map
 export const dataResourceOrder = moduleOrder.filter((key) => !['chat', 'vectorCollections'].includes(key));
 export const emptyData = Object.fromEntries(moduleOrder.map((key) => [key, []]));
 
+export const routeByModule = {
+  intents: '/intents',
+  actions: '/actions',
+  externalData: '/external-data',
+  agents: '/agents',
+  mappings: '/agent-utilities',
+  semanticSearches: '/semantic-search',
+  utilities: '/utilities',
+  vectorCollections: '/vector-collections',
+  chat: '/chat',
+};
+
+export const moduleByRoute = Object.fromEntries(
+  Object.entries(routeByModule).map(([key, path]) => [path, key]),
+);
+
 export const navGroups = [
   {
     title: 'AI-Configuration',

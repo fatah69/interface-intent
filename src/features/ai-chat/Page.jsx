@@ -1,10 +1,49 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Send } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Check, Copy, Send } from 'lucide-react';
 import { modules } from '../../config/resources';
 import { PageHeader, StatusStrip } from '../../templates/components/PageHeader';
 
+const chatStorageKey = 'intent-agent-ai-chat-session';
+const initialMessages = [{ role: 'assistant', content: 'Halo, silakan kirim pesan untuk menguji AI.' }];
+
 function getSessionId() {
   return globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : String(Date.now());
+}
+
+function createChatState() {
+  return { sessionId: getSessionId(), messages: initialMessages };
+}
+
+function loadChatState() {
+  try {
+    const stored = globalThis.sessionStorage?.getItem(chatStorageKey);
+    if (!stored) return createChatState();
+
+    const parsed = JSON.parse(stored);
+    if (!parsed?.sessionId || !Array.isArray(parsed.messages)) return createChatState();
+    return {
+      sessionId: parsed.sessionId,
+      messages: parsed.messages.length ? parsed.messages : initialMessages,
+    };
+  } catch {
+    return createChatState();
+  }
+}
+
+function saveChatState(chatState) {
+  try {
+    globalThis.sessionStorage?.setItem(chatStorageKey, JSON.stringify(chatState));
+  } catch {
+    // Chat remains usable even if browser storage is unavailable.
+  }
+}
+
+function clearChatState() {
+  try {
+    globalThis.sessionStorage?.removeItem(chatStorageKey);
+  } catch {
+    // Ignore storage failures; reset still updates in-memory state.
+  }
 }
 
 function extractChatReply(payload) {
@@ -22,31 +61,58 @@ function extractChatReply(payload) {
   return JSON.stringify(payload, null, 2);
 }
 
-export function ChatPage({ data, loadData }) {
+function fallbackCopyText(value) {
+  const textArea = document.createElement('textarea');
+  textArea.value = value;
+  textArea.setAttribute('readonly', '');
+  textArea.style.position = 'fixed';
+  textArea.style.top = '-1000px';
+  document.body.appendChild(textArea);
+  textArea.select();
+  const copied = document.execCommand('copy');
+  document.body.removeChild(textArea);
+  return copied;
+}
+
+export function ChatPage() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [sessionId, setSessionId] = useState(getSessionId);
-  const [selectedCollection, setSelectedCollection] = useState('');
-  const [messages, setMessages] = useState([
-    { role: 'assistant', content: 'Halo, silakan kirim pesan untuk menguji AI.' },
-  ]);
-
-  const semanticSearches = data.semanticSearches || [];
-  const selectedSearch = useMemo(
-    () => semanticSearches.find((item) => item.collection_name === selectedCollection),
-    [semanticSearches, selectedCollection],
-  );
+  const [copied, setCopied] = useState(false);
+  const [chatState, setChatState] = useState(loadChatState);
+  const threadEndRef = useRef(null);
+  const { messages, sessionId } = chatState;
 
   useEffect(() => {
-    if (!selectedCollection && semanticSearches[0]?.collection_name) {
-      setSelectedCollection(semanticSearches[0].collection_name);
-    }
-  }, [selectedCollection, semanticSearches]);
+    saveChatState(chatState);
+  }, [chatState]);
+
+  useEffect(() => {
+    threadEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [messages, loading]);
+
+  useEffect(() => {
+    if (!copied) return undefined;
+    const timer = window.setTimeout(() => setCopied(false), 1400);
+    return () => window.clearTimeout(timer);
+  }, [copied]);
 
   function resetChat() {
+    clearChatState();
     setInput('');
-    setSessionId(getSessionId());
-    setMessages([{ role: 'assistant', content: 'Halo, silakan kirim pesan untuk menguji AI.' }]);
+    setChatState(createChatState());
+  }
+
+  async function copySessionId() {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(sessionId);
+      } else if (!fallbackCopyText(sessionId)) {
+        throw new Error('copy failed');
+      }
+      setCopied(true);
+    } catch {
+      setCopied(fallbackCopyText(sessionId));
+    }
   }
 
   async function sendChatMessage(event) {
@@ -55,7 +121,10 @@ export function ChatPage({ data, loadData }) {
     if (!message || loading) return;
 
     setInput('');
-    setMessages((current) => [...current, { role: 'user', content: message }]);
+    setChatState((current) => ({
+      ...current,
+      messages: [...current.messages, { role: 'user', content: message }],
+    }));
     setLoading(true);
 
     try {
@@ -66,8 +135,6 @@ export function ChatPage({ data, loadData }) {
           chatInput: message,
           message,
           sessionId,
-          collection_name: selectedCollection || null,
-          semantic_search_id: selectedSearch?.id ?? null,
         }),
       });
 
@@ -78,9 +145,15 @@ export function ChatPage({ data, loadData }) {
 
       const contentType = response.headers.get('content-type') || '';
       const payload = contentType.includes('application/json') ? await response.json() : await response.text();
-      setMessages((current) => [...current, { role: 'assistant', content: extractChatReply(payload) }]);
+      setChatState((current) => ({
+        ...current,
+        messages: [...current.messages, { role: 'assistant', content: extractChatReply(payload) }],
+      }));
     } catch (error) {
-      setMessages((current) => [...current, { role: 'assistant', content: `Gagal menghubungi AI: ${error.message || 'request gagal'}` }]);
+      setChatState((current) => ({
+        ...current,
+        messages: [...current.messages, { role: 'assistant', content: `Gagal menghubungi AI: ${error.message || 'request gagal'}` }],
+      }));
     } finally {
       setLoading(false);
     }
@@ -88,26 +161,23 @@ export function ChatPage({ data, loadData }) {
 
   return (
     <>
-      <PageHeader config={modules.chat} countLabel="webhook chat" onRefresh={resetChat} refreshTitle="Reset chat" />
-      <StatusStrip>{loading ? 'Mengirim pesan ke webhook n8n...' : 'Webhook chat aktif melalui /chat-webhook proxy.'}</StatusStrip>
+      <PageHeader config={modules.chat} countLabel="chat session" onRefresh={resetChat} refreshTitle="Reset chat" />
+      <StatusStrip>{loading ? 'Mengirim pesan...' : 'AI Chat siap digunakan.'}</StatusStrip>
 
       <section className="chat-panel">
         <div className="chat-layout">
           <div className="chat-meta">
             <div>
-              <p className="eyebrow">n8n webhook</p>
-              <strong>AI conversation test</strong>
+              <p className="eyebrow">AI Chat</p>
+              <strong>Uji percakapan</strong>
             </div>
-            <label className="chat-collection">
-              <span>Semantic Search Collection</span>
-              <select value={selectedCollection} onChange={(event) => setSelectedCollection(event.target.value)}>
-                <option value="">No collection</option>
-                {semanticSearches.map((item) => (
-                  <option key={item.id} value={item.collection_name}>{item.collection_name}</option>
-                ))}
-              </select>
-            </label>
-            <code>{sessionId}</code>
+            <div className="chat-session">
+              <span>Session ID</span>
+              <code>{sessionId}</code>
+              <button className="ghost-button" type="button" onClick={copySessionId} title="Copy session ID">
+                {copied ? <Check size={16} /> : <Copy size={16} />}
+              </button>
+            </div>
           </div>
 
           <div className="chat-thread" aria-live="polite">
@@ -123,6 +193,7 @@ export function ChatPage({ data, loadData }) {
                 <p>Mengambil respons...</p>
               </div>
             )}
+            <div ref={threadEndRef} />
           </div>
 
           <form className="chat-composer" onSubmit={sendChatMessage}>

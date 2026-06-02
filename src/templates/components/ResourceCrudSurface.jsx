@@ -1,3 +1,4 @@
+import { ConfirmationModal } from './ConfirmationModal';
 import { DetailDrawer } from './DetailDrawer';
 import { PageError } from './PageError';
 import { ResourceModal } from './ResourceModal';
@@ -33,7 +34,8 @@ export function ResourceCrudSurface({ resource, data, loading, crud, toolbarSlot
                 resource={resource}
                 config={config}
                 data={data}
-                rows={crud.filteredRows}
+                rows={crud.paginatedRows}
+                pagination={crud.pagination}
                 canUpdate={capabilities.canUpdate}
                 canRemove={capabilities.canRemove}
                 onView={crud.openDrawer}
@@ -65,6 +67,12 @@ export function ResourceCrudSurface({ resource, data, loading, crud, toolbarSlot
           crud.setDrawer(null);
           crud.openEdit(row);
         }}
+      />
+
+      <ConfirmationModal
+        confirmation={crud.confirmation}
+        onCancel={() => crud.setConfirmation(null)}
+        onConfirm={crud.confirmDelete}
       />
     </>
   );

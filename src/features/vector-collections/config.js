@@ -4,8 +4,7 @@ export const vectorCollectionPage = {
   title: "Vector Collections",
   singular: "Vector Collection",
   icon: DatabaseZap,
-  description:
-    "Register semantic_search collection lalu isi n8n_vector_collections melalui n8n.",
+  description: "Upload knowledge ke collection yang dipilih.",
   fields: [],
   columns: [],
 };

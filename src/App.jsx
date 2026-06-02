@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { api } from './api/client';
 import { featurePages } from './features';
 import { Sidebar } from './templates/components/Sidebar';
-import { dataResourceOrder, emptyData, modules } from './config/resources';
+import { dataResourceOrder, emptyData, moduleOrder, modules, routeByModule } from './config/resources';
 import { normalizeList } from './utils/resourceUtils.jsx';
 
 function App() {
-  const [active, setActive] = useState('intents');
   const [data, setData] = useState(emptyData);
   const [apiStatus, setApiStatus] = useState('Menunggu data real dari API.');
   const [loading, setLoading] = useState(false);
@@ -49,20 +49,26 @@ function App() {
     loadData();
   }, []);
 
-  const ActivePage = featurePages[active];
+  const pageProps = {
+    data,
+    apiStatus,
+    loading,
+    loadData,
+    setApiStatus,
+  };
 
   return (
     <div className="app-shell">
-      <Sidebar active={active} data={data} onSelect={setActive} />
+      <Sidebar data={data} />
       <main className="workspace">
-        <ActivePage
-          key={active}
-          data={data}
-          apiStatus={apiStatus}
-          loading={loading}
-          loadData={loadData}
-          setApiStatus={setApiStatus}
-        />
+        <Routes>
+          <Route path="/" element={<Navigate to={routeByModule.intents} replace />} />
+          {moduleOrder.map((key) => {
+            const Page = featurePages[key];
+            return <Route key={key} path={routeByModule[key]} element={<Page {...pageProps} />} />;
+          })}
+          <Route path="*" element={<Navigate to={routeByModule.intents} replace />} />
+        </Routes>
       </main>
     </div>
   );

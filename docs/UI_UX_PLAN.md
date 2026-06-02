@@ -7,12 +7,14 @@ The dashboard is an operational React/Vite interface for configuring AI chatbot 
 The UI now uses a focused structure:
 
 - Sidebar navigation for ERD/API resources.
+- Route-based navigation through `react-router-dom`, with clean URLs for each dashboard page.
 - Collapsible `AI-Configuration` sub-sidebar. Sidebar follows mentor grouping: Actions owns External Data, AI Agents, Agent Utilities, and Semantic Search; Utilities, Vector Collections, and AI Chat are direct items. Vectors are not shown as an empty page because they are handled by the n8n PGVector workflow until read endpoints exist. Do not add a Semantic Search sub-submenu unless requested.
 - Compact page header with record count.
 - Global API status strip.
 - Searchable table.
+- Client-side table pagination for loaded Swagger resources with rows-per-page options `10`, `25`, and `50`.
 - Real API-backed add/edit/delete actions where Swagger exposes them.
-- Vector Collections page for text upload, PDF upload, and Intent/Action sync through n8n.
+- Vector Collections page for text and PDF upload through n8n.
 - Detail drawer for row inspection.
 - Unavailable panels for ERD resources whose endpoints are not exposed.
 
@@ -32,10 +34,15 @@ Implemented on 2026-06-01:
 - JSON fields have placeholders, inline validation, and a `Format JSON` control.
 - Modules without read endpoints show endpoint-unavailable panels instead of generic empty tables.
 - Rows open a read-only detail drawer with payload JSON and API capability information.
+- Shared CRUD tables include a footer with rows-per-page control, record range text, First/Previous/numbered page/Next/Last controls, and no `All` option.
+- Shared CRUD table empty states now distinguish between no loaded data and no search results.
 - Add/Edit/Delete controls are disabled when Swagger does not expose the matching method.
 - AI Chat page posts to the n8n webhook through `/chat-webhook` and renders the real response.
-- AI Chat includes a Semantic Search Collection selector populated from real `/api/semantic-searches/` data; the selected `collection_name` is sent to the webhook.
-- Vector Collections is a dedicated page with a single board layout: Semantic Search collection selector, register collection field, tabbed POST/PUT operations, and shared request status. Registering creates a `/api/semantic-searches/` row so the collection also appears on Semantic Search. `POST` uploads text knowledge, `POST` uploads PDF via multipart field `file`, and `PUT` inserts/syncs Intent + Action data by selected `collection_name`.
+- AI Chat sends `chatInput`, `message`, and `sessionId` to the n8n webhook; collection routing is handled by the n8n prompt/chat logic, not by a frontend selector.
+- AI Chat persists the current `sessionId` and message list in `sessionStorage`, so the conversation survives route changes and refreshes in the same browser session.
+- AI Chat labels the visible `Session ID`, provides a copy control, and scrolls to the latest message automatically.
+- Vector Collections is a dedicated page with a single board layout: Semantic Search collection selector, text/PDF upload tabs, and shared request status. Collection names are created from the Semantic Search page. `POST` uploads text knowledge and `POST` uploads PDF via multipart field `file`; Intent/Action sync is hidden from the UI because the n8n workflow can create duplicate vector rows if used casually.
+- Vector Collections keeps the last selected collection in `sessionStorage` and uses a searchable, scroll-limited collection picker so long collection lists do not overflow the page.
 - ERD alignment is name-based, not FK-based: `semantic_search.collection_name` is the Action-facing registry, while `n8n_vector_collections.name` is the PGVector collection created/filled by n8n.
 - Sidebar parent items and nested submenus can be hidden or shown without leaving the page.
 - n8n async responses such as `executionStarted` are rendered as readable workflow status, not raw JSON bubbles.
@@ -56,8 +63,8 @@ Currently available and used:
 - Full CRUD plus detail: Actions, AI Agents, External Data, Intents, Semantic Search.
 - List and create: Utilities.
 - Create only: AI Agent Utility Mapping.
-- Non-Swagger chat webhook: `POST /chat-webhook` proxied to the n8n `:5678` webhook. Payload includes `collection_name` and `semantic_search_id` from the selected Semantic Search row.
-- Non-Swagger VectorDB webhook: `POST` and `PUT /vector-webhook` proxied to `:5678/webhook/update-intent`. Payload uses the selected Semantic Search `collection_name`.
+- Non-Swagger chat webhook: `POST /chat-webhook` proxied to the n8n `:5678` webhook. Payload includes `chatInput`, `message`, and `sessionId`.
+- Non-Swagger VectorDB webhook: `POST /vector-webhook` proxied to `:5678/webhook/update-intent`. Payload uses the selected Semantic Search `collection_name`. The n8n `PUT` sync endpoint remains documented but is not exposed in the UI.
 
 Still unavailable in Swagger/API:
 
@@ -137,7 +144,7 @@ Current implementation should satisfy:
 - Tables show meaningful labels and relationship summaries, not only raw IDs.
 - Intent forms show detailed Action choices, not only `#id` values.
 - AI Chat sends messages to the webhook and does not use canned local replies.
-- Vector Collections actions send real Swagger requests for collection registration and real webhook requests for PGVector upload/sync. No fake local collection state is stored.
+- Vector Collections actions send real webhook requests for PGVector text/PDF upload. No fake local collection state is stored.
 - AI Chat does not show async n8n execution payloads as raw JSON when no direct text answer is returned.
 - `App.jsx` remains a small shell; resource/page logic stays in page/component/config files.
 - No mock data is used anywhere in the app.

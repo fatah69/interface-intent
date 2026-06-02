@@ -38,16 +38,18 @@ src/features/<feature-name>/        Sidebar page feature folders
 src/features/*/config.js            Feature-specific resource config
 src/features/*/Page.jsx             Feature page entry point
 src/features/ai-chat/Page.jsx       AI Chat webhook workflow
-src/features/vector-collections/Page.jsx Vector Collections upload/sync workflow
+src/features/vector-collections/Page.jsx Vector Collections upload workflow
 src/templates/hooks/useResourceCrud.js Shared CRUD behavior
 src/templates/components/           Shared sidebar, forms, modal, drawer, table, toolbar pieces
-src/config/resources.js             Feature registry and nav grouping
+src/config/resources.js             Feature registry, route map, and nav grouping
 src/config/resourceOptions.js       Shared enum and relation maps
 src/utils/resourceUtils.jsx         Labels, validation, payload transforms, table values
 src/api/client.js                   REST endpoint map and request helper
 ```
 
 Each sidebar page is treated as a feature. New CRUD-style features should get a folder under `src/features/`, define `Page.jsx` and `config.js`, then be registered through `resources.js` and `src/features/index.js`. Feature pages own layout and reuse shared hooks/components from `src/templates/` to avoid copy-pasting CRUD behavior.
+
+Navigation uses `react-router-dom` with clean dashboard routes such as `/intents`, `/actions`, `/semantic-search`, `/vector-collections`, and `/chat`. The production server falls back to `index.html`, so direct refresh on those routes is supported.
 
 Use this rule of thumb when changing the app:
 
@@ -56,6 +58,7 @@ Use this rule of thumb when changing the app:
 - Shared CRUD behavior: edit `src/templates/hooks/useResourceCrud.js`.
 - Shared UI pieces: edit `src/templates/components/`.
 - API paths and method availability: edit `src/api/client.js`.
+- Route paths and sidebar grouping: edit `src/config/resources.js`.
 
 ## Getting Started
 
@@ -153,9 +156,9 @@ VITE_API_BASE_URL=
 
 Direct calls to `http://172.16.210.244:8080` may hit CORS issues in the browser, so the proxy is preferred.
 
-The AI Chat page uses `/chat-webhook`, proxied by Vite to the n8n webhook. The frontend sends `{ chatInput, message, sessionId, collection_name, semantic_search_id }` and renders the real webhook response. `collection_name` is selected from real Semantic Search records so webhook collection naming matches `/api/semantic-searches/`.
+The AI Chat page uses `/chat-webhook`, proxied by Vite to the n8n webhook. The frontend sends `{ chatInput, message, sessionId }` and renders the real webhook response. The n8n chat workflow determines which collection to use from the prompt/chat logic. The browser keeps the current chat session in `sessionStorage` so conversation state survives route changes and page refreshes in the same tab session.
 
-The Vector Collections page registers collection names through `/api/semantic-searches/`, then uses `/vector-webhook`, proxied by Vite to the n8n PGVector workflow. It supports `POST` text knowledge, `POST` PDF upload, and `PUT` intent/action sync. The same `collection_name` is visible on Semantic Search and sent to n8n when upload/sync runs.
+The Vector Collections page uses collection names from `/api/semantic-searches/`, then uses `/vector-webhook`, proxied by Vite to the n8n PGVector workflow. It supports `POST` text knowledge and `POST` PDF upload. The same `collection_name` is visible on Semantic Search and sent to n8n when upload runs.
 
 ERD alignment: `semantic_search.collection_name` and `n8n_vector_collections.name` are different tables and have no direct foreign key. The app treats the name as the logical link: Semantic Search stores the registry row used by Actions, while n8n creates or fills the PGVector collection with the same name.
 
@@ -168,7 +171,7 @@ The dashboard implements these ERD/API resources:
 - Intents: list, detail, create, update, delete.
 - External Data: list, detail, create, update, delete.
 - Semantic Search: list, detail, create, update, delete.
-- Vector Collections: register/select a Semantic Search `collection_name`, upload text, upload PDF, and sync Intent/Action data to the n8n PGVector workflow.
+- Vector Collections: select a Semantic Search `collection_name`, upload text, and upload PDF to the n8n PGVector workflow.
 - Utilities: list and create.
 - Agent Utilities: create mapping only.
 - n8n vectors: handled through the Vector Collections page, not a separate empty CRUD page, because no read endpoint is exposed.
@@ -231,8 +234,8 @@ The interface is designed as an operational dashboard, not a landing page. It us
 - Detailed Action labels in Intent dropdowns, including id, type, target, and parameter summary.
 - Real API dropdowns for foreign keys.
 - AI Chat page for testing the n8n webhook.
-- Semantic Search collection selector in AI Chat; selected `collection_name` is sent to the webhook.
-- Vector Collections page for `POST` text, `POST` PDF, and `PUT` sync against the n8n workflow.
+- AI Chat sends `chatInput`, `message`, and `sessionId`; n8n chooses the collection from prompt/chat logic.
+- Vector Collections page for `POST` text and `POST` PDF against the n8n workflow.
 - Vectors are not shown as an empty page; the ERD table is populated through n8n/PGVector until a read endpoint is available.
 - JSON validation and formatting controls.
 - Detail drawer for row inspection.

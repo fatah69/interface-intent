@@ -94,15 +94,15 @@ Swagger HTML tidak menampilkan endpoint detail/update/delete untuk utility dan m
 | --- | --- | --- | --- |
 | `POST` | `/chat-webhook` | `:5678/webhook/.../chat` | Mengirim pesan user ke workflow AI/n8n |
 
-Endpoint ini bukan bagian dari Swagger, tetapi dipakai oleh halaman AI Chat. Frontend mengirim `chatInput`, `message`, `sessionId`, `collection_name`, dan `semantic_search_id`.
+Endpoint ini bukan bagian dari Swagger, tetapi dipakai oleh halaman AI Chat. Frontend hanya mengirim `chatInput`, `message`, dan `sessionId`; workflow n8n menentukan collection yang dipakai dari prompt/chat logic.
 ### VectorDB n8n Webhook
 
 | Method | Frontend Path | Target | Fungsi |
 | --- | --- | --- | --- |
 | `POST` | `/vector-webhook` | `:5678/webhook/update-intent` | Upload text knowledge atau PDF ke collection VectorDB |
-| `PUT` | `/vector-webhook` | `:5678/webhook/update-intent` | Sync Intent + Action dari backend ke collection VectorDB |
+| `PUT` | `/vector-webhook` | `:5678/webhook/update-intent` | Sync Intent + Action dari backend ke collection VectorDB; tidak diekspos di UI |
 
-Endpoint ini bukan bagian dari Swagger `:8080`; endpoint berasal dari workflow n8n `update_vectordb_ultimate`. UI-nya berada di halaman Vector Collections. Target dipilih dari data real `/api/semantic-searches/`; target baru didaftarkan dulu lewat `POST /api/semantic-searches/` agar muncul juga di halaman Semantic Search.
+Endpoint ini bukan bagian dari Swagger `:8080`; endpoint berasal dari workflow n8n `update_vectordb_ultimate`. UI-nya berada di halaman Vector Collections. Target upload dipilih dari data real `/api/semantic-searches/`; target baru dibuat dari halaman Semantic Search.
 
 Sesuai ERD, `semantic_search.collection_name` tidak memiliki FK ke `n8n_vector_collections.name`. Integrasi dilakukan by name: nama yang sama didaftarkan di Semantic Search dan dikirim ke n8n untuk membuat/mengisi PGVector.
 

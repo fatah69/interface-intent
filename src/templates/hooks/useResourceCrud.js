@@ -10,6 +10,17 @@ import {
   visibleFields,
 } from '../../utils/resourceUtils.jsx';
 
+const pageSizeOptions = [10, 25, 50];
+
+function pageWindow(currentPage, totalPages) {
+  const windowSize = 5;
+  const halfWindow = Math.floor(windowSize / 2);
+  const start = Math.max(1, Math.min(currentPage - halfWindow, totalPages - windowSize + 1));
+  const end = Math.min(totalPages, start + windowSize - 1);
+
+  return Array.from({ length: end - start + 1 }, (_, index) => start + index);
+}
+
 export function useResourceCrud({ resource, data, loadData, setApiStatus }) {
   const config = modules[resource];
   const [query, setQuery] = useState('');
@@ -18,6 +29,9 @@ export function useResourceCrud({ resource, data, loadData, setApiStatus }) {
   const [form, setForm] = useState({});
   const [errors, setErrors] = useState([]);
   const [busy, setBusy] = useState(false);
+  const [confirmation, setConfirmation] = useState(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const capabilities = {
     canRead: api.can(resource, 'read'),
@@ -31,6 +45,27 @@ export function useResourceCrud({ resource, data, loadData, setApiStatus }) {
     const needle = query.toLowerCase();
     return rows.filter((row) => Object.values(row).join(' ').toLowerCase().includes(needle));
   }, [query, rows]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paginatedRows = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredRows.slice(startIndex, startIndex + pageSize);
+  }, [currentPage, filteredRows, pageSize]);
+
+  function updateQuery(value) {
+    setQuery(value);
+    setPage(1);
+  }
+
+  function goToPage(nextPage) {
+    setPage(Math.min(Math.max(nextPage, 1), totalPages));
+  }
+
+  function updatePageSize(value) {
+    setPageSize(Number(value));
+    setPage(1);
+  }
 
   function updateFormField(field, value) {
     setForm((current) => {
@@ -126,16 +161,30 @@ export function useResourceCrud({ resource, data, loadData, setApiStatus }) {
     setModal(null);
   }
 
-  async function deleteRow(row) {
+  function deleteRow(row) {
     if (!capabilities.canRemove) return;
-    if (!window.confirm(`Hapus ${config.singular} #${row.id}?`)) return;
+    setErrors([]);
+    setConfirmation({
+      row,
+      title: `Delete ${config.singular}`,
+      message: `Hapus ${config.singular} #${row.id}? Data yang sudah dihapus tidak bisa dikembalikan dari dashboard ini.`,
+      confirmLabel: 'Delete',
+      busy: false,
+    });
+  }
+
+  async function confirmDelete() {
+    if (!confirmation?.row) return;
+    setConfirmation((current) => ({ ...current, busy: true }));
     try {
-      await api.remove(resource, row.id);
+      await api.remove(resource, confirmation.row.id);
       await loadData();
       setApiStatus('Data berhasil dihapus dari API.');
+      setConfirmation(null);
     } catch (error) {
       setErrors([`Gagal menghapus dari API: ${error.message || 'request gagal'}.`]);
       setApiStatus('Data tidak dihapus karena API gagal merespons.');
+      setConfirmation(null);
     }
   }
 
@@ -145,13 +194,34 @@ export function useResourceCrud({ resource, data, loadData, setApiStatus }) {
     busy,
     capabilities,
     config,
+    confirmation,
     drawer,
     errors,
     filteredRows,
     form,
     modal,
+    paginatedRows,
+    pagination: {
+      page: currentPage,
+      pageSize,
+      pageSizeOptions,
+      pages: pageWindow(currentPage, totalPages),
+      totalPages,
+      totalRows: filteredRows.length,
+      start: filteredRows.length ? (currentPage - 1) * pageSize + 1 : 0,
+      end: Math.min(currentPage * pageSize, filteredRows.length),
+      canPrevious: currentPage > 1,
+      canNext: currentPage < totalPages,
+      firstPage: () => goToPage(1),
+      lastPage: () => goToPage(totalPages),
+      goToPage,
+      nextPage: () => goToPage(currentPage + 1),
+      previousPage: () => goToPage(currentPage - 1),
+      setPageSize: updatePageSize,
+    },
     query,
     deleteRow,
+    confirmDelete,
     formatJsonField,
     openCreate,
     openDrawer,
@@ -159,7 +229,8 @@ export function useResourceCrud({ resource, data, loadData, setApiStatus }) {
     saveForm,
     setDrawer,
     setModal,
-    setQuery,
+    setConfirmation,
+    setQuery: updateQuery,
     updateFormField,
     visibleFormFields,
   };

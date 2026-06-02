@@ -53,7 +53,7 @@ Endpoint ini tidak muncul di Swagger backend `:8080`, tetapi dipakai oleh halama
 | --- | --- | --- | --- | --- |
 | `POST` | `/chat-webhook` | `http://172.16.210.244:5678/webhook/eb70bb74-2714-4d79-b447-de3e7cd683cb/chat` | Bisa diakses, proxy test `200` | Kirim pesan ke AI/n8n workflow |
 | `POST` | `/vector-webhook` | `http://172.16.210.244:5678/webhook/update-intent` | Bisa diakses; write tests harus disertai cleanup row PGVector | Upload text/PDF ke VectorDB |
-| `PUT` | `/vector-webhook` | `http://172.16.210.244:5678/webhook/update-intent` | Terpasang di UI; tidak di-smoke-test untuk menghindari duplicate insert Intent/Action | Sync Intent + Action ke VectorDB |
+| `PUT` | `/vector-webhook` | `http://172.16.210.244:5678/webhook/update-intent` | Terdokumentasi di n8n; tidak diekspos di UI untuk menghindari duplicate insert Intent/Action | Sync Intent + Action ke VectorDB |
 
 Contoh respons direct test:
 
@@ -73,13 +73,11 @@ Payload frontend:
 {
   "chatInput": "pesan user",
   "message": "pesan user",
-  "sessionId": "uuid-session",
-  "collection_name": "nama_collection_dari_semantic_search",
-  "semantic_search_id": 1
+  "sessionId": "uuid-session"
 }
 ```
 
-`collection_name` otomatis diambil dari pilihan Semantic Search di halaman AI Chat agar nama collection yang dipakai webhook sama dengan data `/api/semantic-searches/`.
+Workflow n8n chat menentukan collection yang dipakai dari prompt/chat logic; AI Chat tidak mengirim `collection_name` atau `semantic_search_id`.
 
 Payload VectorDB text:
 
@@ -142,7 +140,7 @@ Endpoint berikut sudah dites dan mengembalikan `404`, atau tidak muncul di Swagg
 - Tombol Add/Edit/Delete hanya aktif jika method terkait tersedia di konfigurasi API frontend.
 - Tombol Edit/View untuk resource CRUD lengkap mencoba mengambil data detail dari `GET /api/.../{id}`. Jika detail endpoint mengembalikan 404 walaupun list endpoint memiliki row tersebut, UI fallback ke data list agar form/detail tetap bisa dibuka.
 - Data collection existing diambil dari `semantic_search.collection_name` melalui endpoint `/api/semantic-searches/`.
-- Halaman Vector Collections melakukan `POST /api/semantic-searches/` untuk mendaftarkan collection baru agar muncul juga di halaman Semantic Search. Setelah terdaftar, `POST` text, `POST` PDF, atau `PUT` sync ke n8n memakai `collection_name` yang sama untuk mengisi PGVector.
+- Halaman Vector Collections memakai collection yang sudah dibuat di halaman Semantic Search. `POST` text atau `POST` PDF ke n8n memakai `collection_name` yang sama untuk mengisi PGVector.
 - Halaman AI Chat memakai respons real dari `/chat-webhook`; tidak ada fallback jawaban mock. Jika n8n mengembalikan `executionStarted`, UI menampilkan status workflow yang lebih readable, bukan JSON mentah.
 
 
@@ -158,7 +156,7 @@ Implemented on 2026-06-01:
 - Table rows can open a read-only detail drawer; CRUD-complete resources fetch `GET /api/.../{id}` before edit/detail where available.
 - Intent Action dropdown now shows detailed Action labels: id, action type, target, and parameter summary.
 - AI Chat page is available and posts to the n8n webhook through the Vite `/chat-webhook` proxy.
-- AI Chat sends selected Semantic Search `collection_name` and `semantic_search_id` to the webhook.
+- AI Chat sends `chatInput`, `message`, and `sessionId` to the webhook; n8n chooses the collection from prompt/chat logic.
 
 REST API availability was rechecked on 2026-06-01. The active/missing endpoint set is unchanged from the prior audit.
 
