@@ -35,8 +35,8 @@ async function readWebhookResponse(response) {
 }
 
 const modeMeta = {
-  text: { title: 'Upload Text', method: 'POST', detail: 'Text knowledge' },
-  pdf: { title: 'Upload PDF', method: 'POST', detail: 'PDF file' },
+  text: { title: 'Upload Text' },
+  pdf: { title: 'Upload PDF' },
 };
 
 export function VectorCollectionPanel({ collections, loading }) {
@@ -273,8 +273,13 @@ export function VectorCollectionPanel({ collections, loading }) {
               </div>
             </div>
           )}
-          <small>Buat collection baru dari halaman Semantic Search.</small>
         </div>
+        {hasCollections && (
+          <div className="vector-tabs" role="tablist" aria-label="Vector collection operation">
+            <button className={activeMode === 'text' ? 'active' : ''} type="button" onClick={() => switchMode('text')}>Text</button>
+            <button className={activeMode === 'pdf' ? 'active pdf-tab' : 'pdf-tab'} type="button" onClick={() => switchMode('pdf')}>PDF</button>
+          </div>
+        )}
       </div>
 
       <div className="vector-console-main">
@@ -285,17 +290,6 @@ export function VectorCollectionPanel({ collections, loading }) {
           </div>
         ) : (
           <>
-            <div className="vector-operation-head">
-              <div className="vector-tabs" role="tablist" aria-label="Vector collection operation">
-                <button className={activeMode === 'text' ? 'active' : ''} type="button" onClick={() => switchMode('text')}>Text</button>
-                <button className={activeMode === 'pdf' ? 'active' : ''} type="button" onClick={() => switchMode('pdf')}>PDF</button>
-              </div>
-              <div className="vector-method">
-                <span>{activeMeta.method}</span>
-                <small>{activeMeta.detail}</small>
-              </div>
-            </div>
-
             {activeMode === 'text' && (
               <form className="vector-form" onSubmit={submitText}>
                 <div className="vector-form-heading">
@@ -354,10 +348,15 @@ export function VectorCollectionPanel({ collections, loading }) {
                     </button>
                   )}
                 </div>
-                <button className="primary-button" type="submit" disabled={uploadDisabled || !file}>
-                  <FileUp size={16} />
-                  {loadingAction === 'pdf' ? 'Uploading...' : 'Upload PDF'}
-                </button>
+                <div className="vector-form-footer">
+                  <span className="character-counter">PDF maksimal 10 MB.</span>
+                  <div className="vector-form-actions">
+                    <button className="primary-button pdf-upload-button" type="submit" disabled={uploadDisabled || !file}>
+                      <FileUp size={16} />
+                      {loadingAction === 'pdf' ? 'Uploading...' : 'Upload PDF'}
+                    </button>
+                  </div>
+                </div>
               </form>
             )}
           </>
