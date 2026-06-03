@@ -237,7 +237,7 @@ collection_name=nama_collection
 file=<binary PDF>
 ```
 
-PUT sync Intent + Action:
+PUT sync Intent + Action (terdokumentasi untuk n8n, tidak diekspos di UI):
 
 ```json
 {

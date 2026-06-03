@@ -41,7 +41,7 @@ Implemented on 2026-06-01:
 - CRUD modals autofocus the first field, support Escape-to-close when idle, use resource-specific submit labels, and disable fields/buttons while create/update requests are in progress.
 - AI Chat page posts to the n8n webhook through `/chat-webhook` and renders the real response.
 - AI Chat sends `chatInput`, `message`, and `sessionId` to the n8n webhook; collection routing is handled by the n8n prompt/chat logic, not by a frontend selector.
-- AI Chat persists the current `sessionId` and message list in `sessionStorage`, so the conversation survives route changes and refreshes in the same browser session.
+- AI Chat uses a scoped Zustand store for `sessionId`, messages, draft input, and pending request state. The store persists to `sessionStorage`, so route changes do not drop draft text or in-flight AI responses in the same browser session.
 - AI Chat labels the visible `Session ID`, provides a copy control, and scrolls to the latest message automatically.
 - Vector Collections is a dedicated page with a single board layout: Semantic Search collection selector, text/PDF upload tabs, and shared request status. Collection names are created from the Semantic Search page. `POST` uploads text knowledge and `POST` uploads PDF via multipart field `file`; Intent/Action sync is hidden from the UI because the n8n workflow can create duplicate vector rows if used casually.
 - Vector Collections keeps the last selected collection in `sessionStorage` and uses a searchable, scroll-limited collection picker so long collection lists do not overflow the page.

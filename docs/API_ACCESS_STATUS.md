@@ -91,7 +91,7 @@ Payload VectorDB text:
 
 Payload VectorDB PDF memakai `multipart/form-data` dengan field `type=pdf`, `collection_name`, dan binary field `file`.
 
-Di halaman Vector Collections, `collection_name` dipilih dari data real `/api/semantic-searches/`. Target baru didaftarkan dulu melalui `POST /api/semantic-searches/`, lalu nama yang sama dikirim ke n8n saat upload text/PDF atau sync dijalankan.
+Di halaman Vector Collections, `collection_name` dipilih dari data real `/api/semantic-searches/`. Target baru didaftarkan dulu melalui `POST /api/semantic-searches/`, lalu nama yang sama dikirim ke n8n saat upload text/PDF. Endpoint sync tetap terdokumentasi untuk n8n, tetapi tidak diekspos di UI.
 
 Catatan ERD: `semantic_search.collection_name` dan `n8n_vector_collections.name` bukan relasi FK. Keduanya disamakan secara logical by name. Row `semantic_search` membuat collection muncul di halaman Semantic Search dan bisa dipilih oleh Action; workflow n8n membuat/mengisi `n8n_vector_collections` dan `n8n_vectors` memakai nama yang sama.
 
@@ -131,7 +131,7 @@ Endpoint berikut sudah dites dan mengembalikan `404`, atau tidak muncul di Swagg
 | `utility` | Utilities | List/create tersedia, update/delete belum terlihat |
 | `ai_agent_utility` | Agent Utilities | Create tersedia, list belum tersedia |
 | `n8n_vector_collections` | Vector Collections | Tidak ada Swagger read endpoint; dibuat/dipakai oleh n8n PGVector lewat `collection_name` |
-| `n8n_vectors` | Vector Collections | Tidak ada Swagger read endpoint; diisi oleh n8n PGVector dari text/PDF/sync |
+| `n8n_vectors` | Vector Collections | Tidak ada Swagger read endpoint; diisi oleh n8n PGVector dari upload text/PDF. Endpoint sync n8n terdokumentasi tetapi tersembunyi dari UI. |
 
 ## Catatan Frontend
 
