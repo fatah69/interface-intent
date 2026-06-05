@@ -7,9 +7,9 @@ React/Vite dashboard for configuring AI chatbot resources from an existing REST 
 - React `^19.2.6`
 - Vite `^8.0.14`
 - `lucide-react` for icons
-- REST API backend provided externally at `http://172.16.210.244:8080`
-- n8n chat webhook provided externally at `http://172.16.210.244:5678`
-- n8n VectorDB webhook provided externally at `http://172.16.210.244:5678`
+- REST API backend provided externally at `http://194.233.79.180:8080`
+- n8n chat webhook provided externally at `http://103.140.90.131:5678`
+- n8n VectorDB webhook provided externally at `http://103.140.90.131:5678`
 
 ## Architecture
 
@@ -17,14 +17,14 @@ React/Vite dashboard for configuring AI chatbot resources from an existing REST 
 Browser
   -> React/Vite frontend
   -> /api/... via Vite proxy
-  -> http://172.16.210.244:8080/api/...
+  -> http://194.233.79.180:8080/api/...
   -> Existing backend API
   -> PostgreSQL handled by backend
 
 Browser
   -> React/Vite frontend
   -> /chat-webhook via Vite proxy
-  -> http://172.16.210.244:5678/webhook/.../chat
+  -> http://103.140.90.131:5678/webhook/.../chat
   -> Existing n8n chat workflow
 ```
 
@@ -137,9 +137,9 @@ Default runtime config:
 
 ```text
 App URL:           http://0.0.0.0:5173
-REST API proxy:    /api -> http://172.16.210.244:8080
-Chat webhook:      /chat-webhook -> http://172.16.210.244:5678/webhook/.../chat
-Vector webhook:    /vector-webhook -> http://172.16.210.244:5678/webhook/update-intent
+REST API proxy:    /api -> http://194.233.79.180:8080
+Chat webhook:      /chat-webhook -> http://103.140.90.131:5678/webhook/.../chat
+Vector webhook:    /vector-webhook -> http://103.140.90.131:5678/webhook/update-intent
 ```
 
 Open the app from another device with the server IP, for example `http://192.168.77.10:5173/`. For long-running Linux deployment, use PM2 or Nginx; see `server-setup/README.md`.
@@ -154,7 +154,7 @@ Keep `VITE_API_BASE_URL` empty during development unless you intentionally want 
 VITE_API_BASE_URL=
 ```
 
-Direct calls to `http://172.16.210.244:8080` may hit CORS issues in the browser, so the proxy is preferred.
+Direct calls to `http://194.233.79.180:8080` may hit CORS issues in the browser, so the proxy is preferred.
 
 The AI Chat page uses `/chat-webhook`, proxied by Vite to the n8n webhook. The frontend sends `{ chatInput, message, sessionId }` and renders the real webhook response. The n8n chat workflow determines which collection to use from the prompt/chat logic. The browser keeps the current chat session in `sessionStorage` so conversation state survives route changes and page refreshes in the same tab session.
 
@@ -181,7 +181,7 @@ The dashboard implements these ERD/API resources:
 
 Latest Swagger sources checked:
 
-- `http://172.16.210.244:8080/swagger/doc.json`
+- `http://194.233.79.180:8080/swagger/doc.json`
 
 All endpoints available in the latest Swagger are utilized by the frontend.
 
@@ -205,9 +205,9 @@ GET/PUT/DELETE /api/semantic-searches/{id}
 Additional non-Swagger endpoint used by the UI:
 
 ```text
-POST /chat-webhook -> http://172.16.210.244:5678/webhook/eb70bb74-2714-4d79-b447-de3e7cd683cb/chat
-POST /vector-webhook -> http://172.16.210.244:5678/webhook/update-intent
-PUT  /vector-webhook -> http://172.16.210.244:5678/webhook/update-intent
+POST /chat-webhook -> http://103.140.90.131:5678/webhook/eb70bb74-2714-4d79-b447-de3e7cd683cb/chat
+POST /vector-webhook -> http://103.140.90.131:5678/webhook/update-intent
+PUT  /vector-webhook -> http://103.140.90.131:5678/webhook/update-intent
 ```
 
 Not exposed by Swagger/API at the time of the latest audit:

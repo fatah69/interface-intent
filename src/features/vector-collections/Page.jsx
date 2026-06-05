@@ -4,7 +4,9 @@ import { vectorCollectionPage } from './config';
 
 export function VectorCollectionsPage({ data, apiStatus, loading, loadData }) {
   const statusWarning = apiStatus.includes('gagal') || apiStatus.includes('belum');
-  const collectionCount = data.semanticSearches?.length || 0;
+  const vectorCollections = data.vectorCollections || [];
+  const semanticCollections = data.semanticSearches || [];
+  const collectionCount = vectorCollections.length || semanticCollections.length || 0;
 
   return (
     <div className="vector-page">
@@ -15,7 +17,7 @@ export function VectorCollectionsPage({ data, apiStatus, loading, loadData }) {
         onRefresh={loadData}
       />
       <StatusStrip warning={statusWarning}>{loading ? 'Memuat data collection...' : apiStatus}</StatusStrip>
-      <VectorCollectionPanel collections={data.semanticSearches || []} loading={loading} />
+      <VectorCollectionPanel semanticCollections={semanticCollections} vectorCollections={vectorCollections} loading={loading} onRefresh={loadData} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Braces, ChevronDown, ChevronRight } from 'lucide-react';
+import { Braces, ChevronDown, ChevronRight, LogOut } from 'lucide-react';
 import { api } from '../../api/client';
 import { moduleByRoute, modules, navGroups, routeByModule } from '../../config/resources';
 
@@ -9,10 +9,19 @@ function normalizePath(pathname) {
   return pathname;
 }
 
-function NavButton({ item, active, data, navigate, openBranches, onToggleBranch, nested = false }) {
+function canSeeItem(item, user) {
   const config = modules[item.key];
+  if (config?.adminOnly && user?.role?.name !== 'admin') return false;
+  return true;
+}
+
+function NavButton({ item, active, data, user, navigate, openBranches, onToggleBranch, nested = false }) {
+  const config = modules[item.key];
+  if (!canSeeItem(item, user)) return null;
+
   const Icon = config.icon;
-  const hasChildren = item.children?.length > 0;
+  const visibleChildren = (item.children || []).filter((child) => canSeeItem(child, user));
+  const hasChildren = visibleChildren.length > 0;
   const isOpen = openBranches[item.key] ?? false;
   const ToggleIcon = isOpen ? ChevronDown : ChevronRight;
   const canRead = api.can(item.key, 'read');
@@ -43,12 +52,13 @@ function NavButton({ item, active, data, navigate, openBranches, onToggleBranch,
       </button>
       {hasChildren && isOpen && (
         <div className="sub-nav">
-          {item.children.map((child) => (
+          {visibleChildren.map((child) => (
             <NavButton
               key={child.key}
               item={child}
               active={active}
               data={data}
+              user={user}
               navigate={navigate}
               openBranches={openBranches}
               onToggleBranch={onToggleBranch}
@@ -61,7 +71,7 @@ function NavButton({ item, active, data, navigate, openBranches, onToggleBranch,
   );
 }
 
-export function Sidebar({ data }) {
+export function Sidebar({ data, user, onLogout }) {
   const navigate = useNavigate();
   const location = useLocation();
   const active = moduleByRoute[normalizePath(location.pathname)] || 'intents';
@@ -86,7 +96,7 @@ export function Sidebar({ data }) {
         </div>
       </div>
 
-      <nav>
+      <nav className="sidebar-nav">
         {navGroups.map((group) => (
           <section className="nav-section" key={group.title}>
             <button className="nav-section-toggle" type="button" onClick={() => toggleGroup(group.title)}>
@@ -94,19 +104,31 @@ export function Sidebar({ data }) {
               {(openGroups[group.title] ?? true) ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
             </button>
             {(openGroups[group.title] ?? true) && group.items.map((item) => (
-              <NavButton
-                key={item.key}
-                item={item}
-                active={active}
-                data={data}
-                navigate={navigate}
-                openBranches={openBranches}
-                onToggleBranch={toggleBranch}
+            <NavButton
+              key={item.key}
+              item={item}
+              active={active}
+              data={data}
+              user={user}
+              navigate={navigate}
+              openBranches={openBranches}
+              onToggleBranch={toggleBranch}
               />
             ))}
           </section>
         ))}
       </nav>
+
+      <div className="sidebar-session">
+        <div>
+          <strong>{user?.username || 'User'}</strong>
+          <span>{user?.role?.name || `Role #${user?.role_id || '-'}`}</span>
+        </div>
+        <button className="ghost-button" type="button" onClick={onLogout} title="Logout">
+          <LogOut size={16} />
+        </button>
+      </div>
+
     </aside>
   );
 }

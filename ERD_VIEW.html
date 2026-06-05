@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -16,18 +16,44 @@
       p { margin: 8px 0 0; color: #64748b; }
       main { padding: 24px; }
       .canvas { overflow: auto; min-height: calc(100vh - 130px); padding: 18px; border: 1px solid #d9e2ec; border-radius: 8px; background: #ffffff; }
-      .mermaid { min-width: 1080px; }
+      .mermaid { min-width: 1360px; }
     </style>
   </head>
   <body>
     <header>
       <h1>Intent & Agent ERD</h1>
-      <p>Detailed ERD rendered from ERD.mmd. Data types follow the provided ERD image.</p>
+      <p>Rendered from ERD.mmd. Updated from the 2026-06-04 ERD PDF and new Swagger audit.</p>
     </header>
     <main>
       <div class="canvas">
         <pre class="mermaid">
 erDiagram
+    role {
+        integer id PK "NN"
+        character_varying name
+        text description
+    }
+
+    user {
+        integer id PK "NN"
+        character_varying username
+        character_varying email
+        character_varying password
+        integer role_id FK
+    }
+
+    usecase {
+        integer id PK "NN"
+        character_varying name
+        text description
+        timestamp created_at
+    }
+
+    user_usecase {
+        integer user_id FK
+        integer usecase_id FK
+    }
+
     n8n_vector_collections {
         uuid uuid PK "NN"
         character_varying name
@@ -88,21 +114,26 @@ erDiagram
 
     intent {
         integer id PK "NN"
-        character_varying context
+        integer usecase_id FK
+        text context
         integer action_id FK
     }
 
-    n8n_vector_collections ||--o{ n8n_vectors : "uuid -> collection_id"
+    role o|--o{ user : "id -> role_id"
+    user o|--o{ user_usecase : "id -> user_id"
+    usecase o|--o{ user_usecase : "id -> usecase_id"
+    usecase o|--o{ intent : "id -> usecase_id"
 
-    ai_agent ||--o{ action : "id -> ai_agent_id"
-    external_data ||--o{ action : "id -> external_data_id"
-    semantic_search ||--o{ action : "id -> semantic_search_id"
+    n8n_vector_collections o|--o{ n8n_vectors : "uuid -> collection_id"
 
-    action ||--o{ intent : "id -> action_id"
+    ai_agent o|--o{ action : "id -> ai_agent_id"
+    external_data o|--o{ action : "id -> external_data_id"
+    semantic_search o|--o{ action : "id -> semantic_search_id"
 
-    ai_agent ||--o{ ai_agent_utility : "id -> ai_agent_id"
-    utility ||--o{ ai_agent_utility : "id -> utility_id"
+    action o|--o{ intent : "id -> action_id"
 
+    ai_agent o|--o{ ai_agent_utility : "id -> ai_agent_id"
+    utility o|--o{ ai_agent_utility : "id -> utility_id"
         </pre>
       </div>
     </main>
@@ -112,4 +143,3 @@ erDiagram
     </script>
   </body>
 </html>
-

@@ -13,14 +13,63 @@ This repository contains a React/Vite dashboard for configuring an AI chatbot sy
 - `src/utils/resourceUtils.jsx` contains resource labels, payload preparation, validation, and table value rendering.
 - `src/api/client.js` contains the API endpoint map and request helpers. Update this file first when Swagger changes.
 - `src/styles.css` contains the dashboard layout and component styling.
-- `vite.config.js` proxies frontend `/api/*` requests to `http://172.16.210.244:8080`, `/chat-webhook` to the n8n chat webhook, and `/vector-webhook` to the n8n VectorDB workflow.
+- `vite.config.js` proxies frontend `/api/*` requests to the active Swagger API target, `/chat-webhook` to the n8n chat webhook, and `/vector-webhook` to the n8n VectorDB workflow.
 - `server-setup/` contains internal production deployment notes, a Node static/proxy server, and an optional Nginx config. Keep deployment-specific docs there.
 - `docs/UI_UX_PLAN.md` tracks implemented UI/UX improvements and remaining optional polish.
 - Keep future Markdown documentation in `docs/`; leave only `AGENTS.md` at the repository root.
 - `docs/API_REFERENCE.md` documents payloads and Swagger-derived endpoint notes.
 - `docs/API_ACCESS_STATUS.md` documents which endpoints were reachable and which ERD resources are not exposed by Swagger.
+- `docs/NEW_ERD_SWAGGER_AUDIT_20260604.md` documents the new ERD and Swagger audit for `http://194.233.79.180:8080`.
 
 There is intentionally no mock data. Empty states mean the API returned no data, failed, or the endpoint is unavailable.
+
+## Current Migration Memory
+
+Latest ERD and Swagger audit date: 2026-06-04.
+
+New Swagger/API target for the migration branch is `http://194.233.79.180:8080`. Legacy API target was `http://172.16.210.244:8080`.
+
+The new API is reachable, but GET requests to the main data endpoints return `401 Unauthorized` without a Bearer token. Auth foundation is implemented on the migration branch before switching `/api` proxy defaults.
+
+New Swagger adds auth, roles, usecases, and user-management endpoints: `POST /api/auth/login`, `POST /api/auth/register`, `GET /api/auth/me`, `GET /api/roles`, `POST /api/roles`, `GET/POST /api/usecases`, `GET/PUT/DELETE /api/usecases/{id}`, `GET/POST /api/users`, `GET/PUT/DELETE /api/users/{id}`, and `PUT /api/users/{id}/role`.
+
+Auth test on 2026-06-05 confirmed `POST /api/auth/login` returns `{ message, token, user }`. Use `Authorization: Bearer <token>` for authenticated API calls. Do not store test credentials in repository files.
+
+New API list responses use `{ data: [...] }` wrappers. Current `normalizeList()` and `normalizeRecord()` already support this shape.
+
+Runtime path caveat for the new API: some live routes differ from Swagger trailing slashes. Authenticated reads worked with `/api/roles/`, `/api/utilities`, and `/api/vector-collections`. The variants `/api/roles`, `/api/utilities/`, and `/api/vector-collections/` returned `401` during testing, so use exact known-good paths when updating `src/api/client.js`.
+
+The new ERD adds tables `user`, `role`, `usecase`, and `user_usecase`. It also updates `intent` with `usecase_id`. Runtime probes on 2026-06-05 confirmed authenticated reads for `/api/usecases/` and `/api/users/` now return `200`, so the frontend can populate Intent `usecase_id` from the Usecases API and expose admin-only user management.
+
+New ERD relations to remember:
+
+- `role.id -> user.role_id`
+- `user.id -> user_usecase.user_id`
+- `usecase.id -> user_usecase.usecase_id`
+- `usecase.id -> intent.usecase_id`
+- `n8n_vector_collections.uuid -> n8n_vectors.collection_id`
+- `semantic_search.id -> action.semantic_search_id`
+- `external_data.id -> action.external_data_id`
+- `ai_agent.id -> action.ai_agent_id`
+- `action.id -> intent.action_id`
+- `ai_agent.id -> ai_agent_utility.ai_agent_id`
+- `utility.id -> ai_agent_utility.utility_id`
+
+New Swagger/ERD protocol enum is `http_get`, `https_post`, and `grpc`. Keep frontend protocol options aligned with this enum before writing `AI Agents` or `External Data` to the new API.
+
+New Swagger defines JSON-like fields as strings: `parameter_needed`, `header`, `default_param`, and `cmetadata`. Current frontend behavior of validating JSON text but sending string values matches this Swagger shape.
+
+Register caveat: `POST /api/auth/register` can create a user without Bearer token, and a probe without `role_id` created a test user with `role_id: null`. Do not expose public self-register on the login page. For the dashboard UI, prefer the admin-only Users page with `POST /api/users` because it supports role and usecase assignment in one clear flow.
+
+Vector Collections migration decision:
+
+- Swagger `/api/vector-collections` is used to read/list/inspect collections and to create a native vector collection row when a selected Semantic Search collection does not yet exist there.
+- Swagger `GET /api/vector-collections/{uuid}` is used to view/download the original uploaded file stored from `cmetadata`.
+- Swagger `POST /api/vector-collections/{uuid}/upload` is used to upload the original TXT/PDF file so knowledge can be viewed as a coherent file, not only as vector chunks.
+- The n8n `/vector-webhook` upload still runs after the Swagger upload so the existing chunking/vector indexing workflow and AI search behavior remain intact.
+- Keep Semantic Search as the Action target registry because `action.semantic_search_id` still exists in the new ERD/Swagger.
+
+AI Chat remains separate from Swagger CRUD. It sends messages to n8n through `/chat-webhook` with `chatInput`, `message`, and `sessionId`. The n8n workflow decides collection routing from prompt/chat logic.
 
 ## Build, Test, and Development Commands
 
@@ -39,10 +88,14 @@ The web app currently implements these ERD modules:
 
 - AI Agents: list, detail-on-edit, create, update, delete.
 - Actions: list, detail-on-edit, create, update, delete.
-- Intents: list, detail-on-edit, create, update, delete.
+- Auth: login, persisted Bearer token, profile load, logout, and unauthorized session handling.
+- Intents: list, detail-on-edit, create, update, delete, including `usecase_id` relation.
+- Usecases: list, detail-on-edit, create, update, delete.
+- Roles: admin-only list and create, used by User Management role assignment.
+- Users: admin-only list, detail-on-edit, create, update, assign role, delete with role and usecase assignment fields.
 - External Data: list, detail-on-edit, create, update, delete.
 - Semantic Search: list, detail-on-edit, create, update, delete.
-- Vector Collections: choose an existing Semantic Search collection, then `POST` text or `POST` PDF to n8n via `/vector-webhook`. Create collection names from the Semantic Search page.
+- Vector Collections: read/list Swagger vector collections for inspection, choose an existing Semantic Search collection, then `POST` text or `POST` PDF to n8n via `/vector-webhook`. Create collection names from the Semantic Search page.
 - Utilities: list and create only, matching Swagger.
 - Agent Utilities: create only, matching Swagger.
 - `n8n_vector_collections` and `n8n_vectors`: managed by the Vector Collections page through n8n PGVector until direct read endpoints exist.
@@ -52,7 +105,9 @@ ERD note: `semantic_search.collection_name` and `n8n_vector_collections.name` ar
 
 ## API Usage Status
 
-Live Swagger checked at `http://172.16.210.244:8080/swagger/doc.json`.
+Legacy Swagger/current code default was checked at `http://172.16.210.244:8080/swagger/doc.json`.
+
+New migration Swagger was checked on 2026-06-04 at `http://194.233.79.180:8080/swagger/doc.json`. The new API is authenticated; unauthenticated GET requests to data endpoints return `401 Unauthorized`. Implement login/Bearer token handling before switching the frontend/proxy default to the new API.
 
 Fully utilized Swagger endpoints:
 
@@ -60,14 +115,17 @@ Fully utilized Swagger endpoints:
 - `/api/ai-agents/` and `/api/ai-agents/{id}`: `GET`, `POST`, `PUT`, `DELETE` as exposed.
 - `/api/external-data/` and `/api/external-data/{id}`: `GET`, `POST`, `PUT`, `DELETE` as exposed.
 - `/api/intents/` and `/api/intents/{id}`: `GET`, `POST`, `PUT`, `DELETE` as exposed.
+- `/api/usecases/` and `/api/usecases/{id}`: `GET`, `POST`, `PUT`, `DELETE` as exposed.
+- `/api/users/` and `/api/users/{id}`: `GET`, `POST`, `PUT`, `DELETE` as exposed, admin-only in UI.
+- `/api/roles/`: `GET` and `POST` as exposed; used by user-management relations.
 - `/api/semantic-searches/` and `/api/semantic-searches/{id}`: `GET`, `POST`, `PUT`, `DELETE` as exposed.
-- `/api/utilities/`: `GET` and `POST`.
+- `/api/utilities`: `GET` and `POST`.
 - `/api/ai-agent-utilities/`: `POST`.
 
 Additional non-Swagger endpoint used by the UI:
 
-- `/chat-webhook`: `POST`, proxied to `http://172.16.210.244:5678/webhook/eb70bb74-2714-4d79-b447-de3e7cd683cb/chat`.
-- `/vector-webhook`: `POST` and `PUT`, proxied to `http://172.16.210.244:5678/webhook/update-intent`. UI exposes only `POST` text JSON and PDF multipart upload; `PUT` sync remains a documented n8n endpoint but is hidden from UI because it can duplicate Intent/Action vectors. Do not run write smoke tests without a cleanup path because POST inserts rows into PGVector.
+- `/chat-webhook`: `POST`, proxied to public n8n `http://103.140.90.131:5678/webhook/eb70bb74-2714-4d79-b447-de3e7cd683cb/chat`.
+- `/vector-webhook`: `POST` and `PUT`, proxied to public n8n `http://103.140.90.131:5678/webhook/update-intent`. UI exposes only `POST` text JSON and PDF multipart upload; `PUT` sync remains a documented n8n endpoint but is hidden from UI because it can duplicate Intent/Action vectors. Do not run write smoke tests without a cleanup path because POST inserts rows into PGVector.
 
 Endpoints not present in Swagger / not available:
 
@@ -75,6 +133,8 @@ Endpoints not present in Swagger / not available:
 - Detail, update, and delete endpoints for `/api/utilities/`.
 - Any CRUD endpoints for `n8n_vector_collections`.
 - Any CRUD endpoints for `n8n_vectors`.
+
+Migration caveat: the new Swagger at `194.233.79.180:8080` exposes `/api/vector-collections` for read/list/inspect, native collection creation, original file upload, and file view/download. Text/PDF knowledge upload still also posts to public n8n `/vector-webhook` for vector indexing.
 
 Do not add fake client-side data for unavailable endpoints. Disable unsupported actions and show a clear unavailable state.
 

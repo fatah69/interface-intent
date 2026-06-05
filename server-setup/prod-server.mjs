@@ -24,8 +24,8 @@ loadEnvFile('.env.production');
 
 const host = process.env.HOST || '0.0.0.0';
 const port = Number(process.env.PORT || 5173);
-const apiTarget = process.env.API_TARGET || 'http://172.16.210.244:8080';
-const n8nTarget = process.env.N8N_TARGET || 'http://172.16.210.244:5678';
+const apiTarget = process.env.API_TARGET || 'http://194.233.79.180:8080';
+const n8nTarget = process.env.N8N_TARGET || 'http://103.140.90.131:5678';
 const chatWebhookPath = process.env.CHAT_WEBHOOK_PATH || '/webhook/eb70bb74-2714-4d79-b447-de3e7cd683cb/chat';
 const vectorWebhookPath = process.env.VECTOR_WEBHOOK_PATH || '/webhook/update-intent';
 

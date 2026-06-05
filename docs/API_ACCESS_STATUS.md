@@ -14,8 +14,8 @@ Frontend development memakai Vite proxy:
 
 ```text
 http://127.0.0.1:5173/api/* -> http://172.16.210.244:8080/api/*
-http://127.0.0.1:5173/chat-webhook -> http://172.16.210.244:5678/webhook/eb70bb74-2714-4d79-b447-de3e7cd683cb/chat
-http://127.0.0.1:5173/vector-webhook -> http://172.16.210.244:5678/webhook/update-intent
+http://127.0.0.1:5173/chat-webhook -> http://103.140.90.131:5678/webhook/eb70bb74-2714-4d79-b447-de3e7cd683cb/chat
+http://127.0.0.1:5173/vector-webhook -> http://103.140.90.131:5678/webhook/update-intent
 ```
 
 Alasan memakai proxy: API bisa di-hit dari shell/local network, tetapi request browser langsung ke IP server berpotensi gagal karena CORS. Dengan proxy, data tetap berasal dari API real, bukan data mock.
@@ -51,9 +51,9 @@ Endpoint ini tidak muncul di Swagger backend `:8080`, tetapi dipakai oleh halama
 
 | Method | Frontend path | Target proxy | Status | Dipakai untuk |
 | --- | --- | --- | --- | --- |
-| `POST` | `/chat-webhook` | `http://172.16.210.244:5678/webhook/eb70bb74-2714-4d79-b447-de3e7cd683cb/chat` | Bisa diakses, proxy test `200` | Kirim pesan ke AI/n8n workflow |
-| `POST` | `/vector-webhook` | `http://172.16.210.244:5678/webhook/update-intent` | Bisa diakses; write tests harus disertai cleanup row PGVector | Upload text/PDF ke VectorDB |
-| `PUT` | `/vector-webhook` | `http://172.16.210.244:5678/webhook/update-intent` | Terdokumentasi di n8n; tidak diekspos di UI untuk menghindari duplicate insert Intent/Action | Sync Intent + Action ke VectorDB |
+| `POST` | `/chat-webhook` | `http://103.140.90.131:5678/webhook/eb70bb74-2714-4d79-b447-de3e7cd683cb/chat` | Public n8n target | Kirim pesan ke AI/n8n workflow |
+| `POST` | `/vector-webhook` | `http://103.140.90.131:5678/webhook/update-intent` | Public n8n target; write tests harus disertai cleanup row PGVector | Upload text/PDF ke VectorDB |
+| `PUT` | `/vector-webhook` | `http://103.140.90.131:5678/webhook/update-intent` | Terdokumentasi di n8n; tidak diekspos di UI untuk menghindari duplicate insert Intent/Action | Sync Intent + Action ke VectorDB |
 
 Contoh respons direct test:
 
@@ -159,6 +159,5 @@ Implemented on 2026-06-01:
 - AI Chat sends `chatInput`, `message`, and `sessionId` to the webhook; n8n chooses the collection from prompt/chat logic.
 
 REST API availability was rechecked on 2026-06-01. The active/missing endpoint set is unchanged from the prior audit.
-
 
 

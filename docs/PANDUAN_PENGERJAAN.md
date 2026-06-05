@@ -69,7 +69,7 @@ Submenu dapat di-hide/unhide. Jangan menambah level submenu baru di bawah Semant
 
 ## Integrasi API
 
-Request API memakai relative path `/api/...` dan diproxy oleh Vite ke `http://172.16.210.244:8080`. Chat memakai `/chat-webhook` dan diproxy ke n8n `:5678`. VectorDB memakai `/vector-webhook` dan diproxy ke `http://172.16.210.244:5678/webhook/update-intent`.
+Request API memakai relative path `/api/...` dan diproxy oleh Vite ke `http://194.233.79.180:8080`. Chat memakai `/chat-webhook` dan diproxy ke n8n `:5678`. VectorDB memakai `/vector-webhook` dan diproxy ke `http://103.140.90.131:5678/webhook/update-intent`.
 
 Navigasi dashboard memakai `react-router-dom`. Route utama saat ini adalah `/intents`, `/actions`, `/external-data`, `/agents`, `/agent-utilities`, `/semantic-search`, `/utilities`, `/vector-collections`, dan `/chat`. Root `/` redirect ke `/intents`.
 

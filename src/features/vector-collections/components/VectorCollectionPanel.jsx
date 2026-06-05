@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, ChevronDown, FileUp, Search, Send, X } from 'lucide-react';
+import { Check, ChevronDown, ExternalLink, FileUp, Search, Send, X } from 'lucide-react';
+import { api } from '../../../api/client';
 
 const selectedCollectionStorageKey = 'intent-agent-vector-collection';
 const maxTextCharacters = 50000;
@@ -26,7 +27,7 @@ async function readWebhookResponse(response) {
   const payload = contentType.includes('application/json') ? await response.json() : await response.text();
 
   if (!response.ok) {
-    const message = typeof payload === 'string' ? payload : payload?.message || JSON.stringify(payload);
+    const message = typeof payload === 'string' ? payload : payload?.error || payload?.message || JSON.stringify(payload);
     throw new Error(message || response.statusText);
   }
 
@@ -39,7 +40,11 @@ const modeMeta = {
   pdf: { title: 'Upload PDF' },
 };
 
-export function VectorCollectionPanel({ collections, loading }) {
+function getCollectionName(item) {
+  return item?.name || item?.collection_name || '';
+}
+
+export function VectorCollectionPanel({ semanticCollections = [], vectorCollections = [], loading, onRefresh }) {
   const [collectionName, setCollectionName] = useState(loadSelectedCollection);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [collectionQuery, setCollectionQuery] = useState('');
@@ -52,10 +57,11 @@ export function VectorCollectionPanel({ collections, loading }) {
   const [loadingAction, setLoadingAction] = useState('');
   const fileInputRef = useRef(null);
 
-  const collectionOptions = useMemo(
-    () => [...new Set(collections.map((item) => item.collection_name).filter(Boolean))].sort(),
-    [collections],
-  );
+  const collectionOptions = useMemo(() => {
+    const vectorNames = vectorCollections.map(getCollectionName).filter(Boolean);
+    const semanticNames = semanticCollections.map(getCollectionName).filter(Boolean);
+    return [...new Set([...vectorNames, ...semanticNames])].sort();
+  }, [semanticCollections, vectorCollections]);
   const filteredCollectionOptions = useMemo(() => {
     const query = collectionQuery.trim().toLowerCase();
     if (!query) return collectionOptions;
@@ -121,17 +127,82 @@ export function VectorCollectionPanel({ collections, loading }) {
     return true;
   }
 
+  function findApiCollection(name) {
+    return vectorCollections.find((item) => getCollectionName(item) === name);
+  }
+
+  function createTextFile(cleanText) {
+    const safeName = collectionName.replace(/[^a-z0-9._-]+/gi, '_').replace(/^_+|_+$/g, '') || 'knowledge';
+    return new File([cleanText], `${safeName}.txt`, { type: 'text/plain' });
+  }
+
+  async function ensureApiCollection() {
+    const existing = findApiCollection(collectionName);
+    if (existing?.uuid) return existing;
+
+    const payload = {
+      uuid: crypto.randomUUID(),
+      name: collectionName,
+      cmetadata: '{}',
+    };
+    const created = await api.createVectorCollection(payload);
+    return created?.data || created || payload;
+  }
+
+  async function uploadOriginalFileToApi(fileToUpload) {
+    const apiCollection = await ensureApiCollection();
+    const uuid = apiCollection?.uuid;
+    if (!uuid) throw new Error('API tidak mengembalikan UUID vector collection.');
+    await api.uploadVectorCollectionFile(uuid, fileToUpload);
+    await onRefresh?.();
+    return uuid;
+  }
+
   async function runRequest(action, request) {
     if (!ensureCollection()) return;
     setLoadingAction(action);
     setStatusType('neutral');
     setStatus('Mengirim data...');
     try {
-      await request();
+      const result = await request();
       setStatusType('success');
-      setStatus(`Berhasil upload ke ${collectionName}.`);
+      setStatus(result || `Berhasil upload ke ${collectionName}.`);
     } catch (error) {
-      setError(error.message || 'Request n8n gagal.');
+      setError(error.message || 'Request upload gagal.');
+    } finally {
+      setLoadingAction('');
+    }
+  }
+
+  async function viewVectorFile(item) {
+    if (!item?.uuid) {
+      setError('UUID collection tidak tersedia dari API vector.');
+      return;
+    }
+
+    setLoadingAction(`view-${item.uuid}`);
+    setStatusType('neutral');
+    setStatus('Membuka file collection dari API...');
+    try {
+      const { blob, contentType, filename } = await api.vectorCollectionFile(item.uuid);
+      const fileBlob = blob.type ? blob : new Blob([blob], { type: contentType });
+      const objectUrl = URL.createObjectURL(fileBlob);
+      const opened = window.open(objectUrl, '_blank', 'noopener,noreferrer');
+
+      if (!opened) {
+        const link = document.createElement('a');
+        link.href = objectUrl;
+        link.download = filename || `${getCollectionName(item) || item.uuid}`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }
+
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+      setStatusType('success');
+      setStatus(`File collection dibuka: ${getCollectionName(item) || item.uuid}.`);
+    } catch (error) {
+      setError(error.message || 'Gagal membuka file collection dari API.');
     } finally {
       setLoadingAction('');
     }
@@ -151,6 +222,7 @@ export function VectorCollectionPanel({ collections, loading }) {
     }
 
     runRequest('text', async () => {
+      await uploadOriginalFileToApi(createTextFile(cleanText));
       const response = await fetch('/vector-webhook', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -168,6 +240,7 @@ export function VectorCollectionPanel({ collections, loading }) {
     }
 
     runRequest('pdf', async () => {
+      await uploadOriginalFileToApi(file);
       const formData = new FormData();
       formData.append('type', 'pdf');
       formData.append('collection_name', collectionName);
@@ -291,6 +364,36 @@ export function VectorCollectionPanel({ collections, loading }) {
           </div>
         ) : (
           <>
+            <div className="vector-read-panel">
+              <div>
+                <strong>Vector collections</strong>
+                <span>{vectorCollections.length ? `${vectorCollections.length} collection dari API` : 'Belum ada collection dari API vector.'}</span>
+              </div>
+              {vectorCollections.length > 0 && (
+                <div className="vector-collection-list">
+                  {vectorCollections.slice(0, 8).map((item) => (
+                    <div className="vector-collection-row" key={item.uuid || item.name}>
+                      <div>
+                        <strong title={getCollectionName(item) || item.uuid}>{getCollectionName(item) || item.uuid}</strong>
+                        <small title={item.uuid}>{item.uuid || 'UUID tidak tersedia'}</small>
+                        {item.cmetadata && <small title={item.cmetadata}>{item.cmetadata}</small>}
+                      </div>
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        onClick={() => viewVectorFile(item)}
+                        disabled={busy || !item.uuid}
+                      >
+                        <ExternalLink size={15} />
+                        {loadingAction === `view-${item.uuid}` ? 'Opening...' : 'View File'}
+                      </button>
+                    </div>
+                  ))}
+                  {vectorCollections.length > 8 && <div className="vector-collection-more">{vectorCollections.length - 8}+ collection lainnya</div>}
+                </div>
+              )}
+            </div>
+
             {activeMode === 'text' && (
               <form className="vector-form" onSubmit={submitText}>
                 <div className="vector-form-heading">

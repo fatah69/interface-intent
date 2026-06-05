@@ -5,6 +5,9 @@ import { chatPage } from '../features/ai-chat/config';
 import { externalDataPage } from '../features/external-data/config';
 import { intentPage } from '../features/intents/config';
 import { semanticSearchPage } from '../features/semantic-search/config';
+import { rolePage } from '../features/roles/config';
+import { usecasePage } from '../features/usecases/config';
+import { userPage } from '../features/users/config';
 import { utilityPage } from '../features/utilities/config';
 import { vectorCollectionPage } from '../features/vector-collections/config';
 
@@ -15,14 +18,18 @@ export const modules = {
   agents: agentPage,
   mappings: agentUtilityPage,
   semanticSearches: semanticSearchPage,
+  roles: rolePage,
+  usecases: usecasePage,
   utilities: utilityPage,
   vectorCollections: vectorCollectionPage,
+  users: userPage,
   chat: chatPage,
 };
 
-export const moduleOrder = ['intents', 'actions', 'externalData', 'agents', 'mappings', 'semanticSearches', 'utilities', 'vectorCollections', 'chat'];
-export const dataResourceOrder = moduleOrder.filter((key) => !['chat', 'vectorCollections'].includes(key));
-export const emptyData = Object.fromEntries(moduleOrder.map((key) => [key, []]));
+export const moduleOrder = ['intents', 'usecases', 'actions', 'externalData', 'agents', 'mappings', 'semanticSearches', 'utilities', 'vectorCollections', 'roles', 'users', 'chat'];
+export const supportResourceOrder = [];
+export const dataResourceOrder = [...moduleOrder.filter((key) => key !== 'chat'), ...supportResourceOrder];
+export const emptyData = Object.fromEntries([...moduleOrder, ...supportResourceOrder].map((key) => [key, []]));
 
 export const routeByModule = {
   intents: '/intents',
@@ -31,8 +38,11 @@ export const routeByModule = {
   agents: '/agents',
   mappings: '/agent-utilities',
   semanticSearches: '/semantic-search',
+  usecases: '/usecases',
   utilities: '/utilities',
   vectorCollections: '/vector-collections',
+  roles: '/roles',
+  users: '/users',
   chat: '/chat',
 };
 
@@ -45,6 +55,7 @@ export const navGroups = [
     title: 'AI-Configuration',
     items: [
       { key: 'intents' },
+      { key: 'usecases' },
       {
         key: 'actions',
         children: [
@@ -56,6 +67,8 @@ export const navGroups = [
       },
       { key: 'utilities' },
       { key: 'vectorCollections' },
+      { key: 'roles' },
+      { key: 'users' },
       { key: 'chat' },
     ],
   },

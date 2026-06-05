@@ -6,8 +6,8 @@ Panduan ini untuk menjalankan **Intent & Agent Management Console** di server in
 
 - Node.js 20.19 atau lebih baru. Disarankan pakai `nvm` supaya Node global server tidak berubah.
 - Server berada di jaringan yang bisa akses:
-  - `http://172.16.210.244:8080`
-  - `http://172.16.210.244:5678`
+  - `http://194.233.79.180:8080`
+  - `http://103.140.90.131:5678`
 - Port aplikasi dibuka di firewall, default `5173`.
 
 ## Setup Node Aman dengan nvm
@@ -59,8 +59,8 @@ Edit `.env.production` kalau IP backend atau port berubah:
 ```env
 HOST=0.0.0.0
 PORT=5173
-API_TARGET=http://172.16.210.244:8080
-N8N_TARGET=http://172.16.210.244:5678
+API_TARGET=http://194.233.79.180:8080
+N8N_TARGET=http://103.140.90.131:5678
 CHAT_WEBHOOK_PATH=/webhook/eb70bb74-2714-4d79-b447-de3e7cd683cb/chat
 VECTOR_WEBHOOK_PATH=/webhook/update-intent
 ```

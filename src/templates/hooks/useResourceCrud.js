@@ -6,6 +6,7 @@ import {
   emptyRecord,
   getActionTarget,
   labelFor,
+  normalizeFormRecord,
   normalizeRecord,
   parameterSummary,
   preparePayload,
@@ -35,6 +36,8 @@ function sortValue(resource, row, column, data) {
   if (column.endsWith('_id')) {
     const relationMap = {
       action_id: 'actions',
+      role_id: 'roles',
+      usecase_id: 'usecases',
       semantic_search_id: 'semanticSearches',
       external_data_id: 'externalData',
       ai_agent_id: 'agents',
@@ -56,6 +59,14 @@ function compareValues(a, b) {
     return aNumber - bNumber;
   }
   return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' });
+}
+
+function userUpdatePayload(payload, { includeRole = true } = {}) {
+  const next = { ...payload };
+  if (!includeRole) delete next.role_id;
+  delete next.id;
+  if (!String(next.password || '').trim()) delete next.password;
+  return next;
 }
 
 export function useResourceCrud({ resource, data, loadData, setApiStatus }) {
@@ -171,8 +182,8 @@ export function useResourceCrud({ resource, data, loadData, setApiStatus }) {
     setBusy(true);
     try {
       const detail = await getDetailOrRow(row);
-      setModal({ mode: 'edit', resource, id: row.id });
-      setForm({ ...emptyRecord(config.fields), ...row, ...detail });
+      setModal({ mode: 'edit', resource, id: row.id, originalRoleId: detail.role_id ?? row.role_id });
+      setForm(normalizeFormRecord(resource, { ...emptyRecord(config.fields), ...row, ...detail }));
     } catch (error) {
       setErrors([`Gagal membuka form edit: ${error.message || 'request gagal'}.`]);
     } finally {
@@ -195,17 +206,24 @@ export function useResourceCrud({ resource, data, loadData, setApiStatus }) {
 
   async function saveForm(event) {
     event.preventDefault();
-    const nextErrors = validateRecord(resource, form);
+    const nextErrors = validateRecord(resource, form, modal.mode);
     if (nextErrors.length) {
       setErrors(nextErrors);
       return;
     }
 
-    const payload = preparePayload(resource, form);
+    const payload = preparePayload(resource, form, modal.mode);
     setBusy(true);
     try {
-      if (modal.mode === 'create') await api.create(resource, payload);
-      if (modal.mode === 'edit') await api.update(resource, modal.id, payload);
+      if (resource === 'users' && modal.mode === 'edit') {
+        await api.update(resource, modal.id, userUpdatePayload(payload, { includeRole: false }));
+        if (payload.role_id != null && String(payload.role_id) !== String(modal.originalRoleId ?? '')) {
+          await api.assignUserRole(modal.id, payload.role_id);
+        }
+      } else {
+        if (modal.mode === 'create') await api.create(resource, payload);
+        if (modal.mode === 'edit') await api.update(resource, modal.id, payload);
+      }
       setApiStatus('Perubahan berhasil dikirim ke API.');
       await loadData();
     } catch (error) {

@@ -1,4 +1,30 @@
-﻿erDiagram
+erDiagram
+    role {
+        integer id PK "NN"
+        character_varying name
+        text description
+    }
+
+    user {
+        integer id PK "NN"
+        character_varying username
+        character_varying email
+        character_varying password
+        integer role_id FK
+    }
+
+    usecase {
+        integer id PK "NN"
+        character_varying name
+        text description
+        timestamp created_at
+    }
+
+    user_usecase {
+        integer user_id FK
+        integer usecase_id FK
+    }
+
     n8n_vector_collections {
         uuid uuid PK "NN"
         character_varying name
@@ -59,17 +85,23 @@
 
     intent {
         integer id PK "NN"
-        character_varying context
+        integer usecase_id FK
+        text context
         integer action_id FK
     }
 
-    n8n_vector_collections ||--o{ n8n_vectors : "uuid -> collection_id"
+    role o|--o{ user : "id -> role_id"
+    user o|--o{ user_usecase : "id -> user_id"
+    usecase o|--o{ user_usecase : "id -> usecase_id"
+    usecase o|--o{ intent : "id -> usecase_id"
 
-    ai_agent ||--o{ action : "id -> ai_agent_id"
-    external_data ||--o{ action : "id -> external_data_id"
-    semantic_search ||--o{ action : "id -> semantic_search_id"
+    n8n_vector_collections o|--o{ n8n_vectors : "uuid -> collection_id"
 
-    action ||--o{ intent : "id -> action_id"
+    ai_agent o|--o{ action : "id -> ai_agent_id"
+    external_data o|--o{ action : "id -> external_data_id"
+    semantic_search o|--o{ action : "id -> semantic_search_id"
 
-    ai_agent ||--o{ ai_agent_utility : "id -> ai_agent_id"
-    utility ||--o{ ai_agent_utility : "id -> utility_id"
+    action o|--o{ intent : "id -> action_id"
+
+    ai_agent o|--o{ ai_agent_utility : "id -> ai_agent_id"
+    utility o|--o{ ai_agent_utility : "id -> utility_id"

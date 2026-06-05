@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Info, X } from 'lucide-react';
 import { modules } from '../../config/resources';
-import { validateJson } from '../../utils/resourceUtils.jsx';
+import { validateEmail, validateJson } from '../../utils/resourceUtils.jsx';
 import { FormField } from './FormField';
 
 export function ResourceModal({ modal, form, errors, visibleFields, data, busy = false, onChangeField, onFormatJson, onClose, onSubmit }) {
@@ -21,9 +21,15 @@ export function ResourceModal({ modal, form, errors, visibleFields, data, busy =
   const actionLabel = modal.mode === 'create' ? 'Create' : 'Update';
   const submitLabel = `${actionLabel} ${config.singular}`;
 
+  function fieldError(field) {
+    if (field.type === 'json') return validateJson(form[field.key]);
+    if (field.type === 'email') return validateEmail(form[field.key]);
+    return '';
+  }
+
   return (
     <div className="modal-backdrop" role="presentation">
-      <form className="modal" onSubmit={onSubmit} aria-busy={busy}>
+      <form className="modal" onSubmit={onSubmit} aria-busy={busy} noValidate>
         <div className="modal-header">
           <div>
             <p className="eyebrow">{actionLabel}</p>
@@ -51,7 +57,7 @@ export function ResourceModal({ modal, form, errors, visibleFields, data, busy =
               field={field}
               value={form[field.key] ?? ''}
               data={data}
-              error={field.type === 'json' ? validateJson(form[field.key]) : ''}
+              error={fieldError(field)}
               autoFocus={index === 0}
               disabled={busy}
               onChange={(value) => onChangeField(field, value)}

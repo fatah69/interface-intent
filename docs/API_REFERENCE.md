@@ -1,17 +1,17 @@
 # API Reference - Intent & Agent Management Console
 
-Sumber: Swagger live `http://172.16.210.244:8080/swagger/doc.json`, Swagger HTML lokal terbaru, dan workflow n8n `update_vectordb_ultimate.json`.
+Sumber: Swagger live `http://194.233.79.180:8080/swagger/doc.json`, Swagger HTML lokal terbaru, dan workflow n8n `update_vectordb_ultimate.json`.
 
 Base URL yang dipakai dari link Swagger:
 
 ```text
-http://172.16.210.244:8080
+http://194.233.79.180:8080
 ```
 
 Webhook chat n8n yang dipakai UI berada di host berbeda dan tidak termasuk Swagger `:8080`:
 
 ```text
-http://172.16.210.244:5678/webhook/eb70bb74-2714-4d79-b447-de3e7cd683cb/chat
+http://103.140.90.131:5678/webhook/eb70bb74-2714-4d79-b447-de3e7cd683cb/chat
 ```
 
 Untuk development React, kosongkan `.env` agar request memakai Vite proxy `/api` dan tidak kena CORS:
@@ -285,9 +285,9 @@ Enum yang terdeteksi:
 
 ## Standar Implementasi Frontend
 
-- Semua request frontend memakai relative path `/api/...` saat `VITE_API_BASE_URL` kosong. Vite proxy meneruskan request ke `http://172.16.210.244:8080`.
+- Semua request frontend memakai relative path `/api/...` saat `VITE_API_BASE_URL` kosong. Vite proxy meneruskan request ke `http://194.233.79.180:8080`.
 - Request chat memakai relative path `/chat-webhook`; Vite proxy meneruskan request ke webhook n8n `:5678`.
-- Request VectorDB memakai relative path `/vector-webhook`; Vite proxy meneruskan request ke `http://172.16.210.244:5678/webhook/update-intent`.
+- Request VectorDB memakai relative path `/vector-webhook`; Vite proxy meneruskan request ke `http://103.140.90.131:5678/webhook/update-intent`.
 - Gunakan trailing slash sesuai Swagger untuk collection endpoint, contoh `/api/intents/`.
 - Untuk detail/update/delete, ganti `{id}` dengan ID numerik.
 - Selalu tampilkan loading, error, empty state, dan konfirmasi delete.

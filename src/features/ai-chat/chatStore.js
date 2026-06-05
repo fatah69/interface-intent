@@ -27,6 +27,18 @@ function extractChatReply(payload) {
   return JSON.stringify(payload, null, 2);
 }
 
+async function readChatError(response) {
+  const text = await response.text().catch(() => response.statusText);
+  if (!text) return response.statusText;
+
+  try {
+    const payload = JSON.parse(text);
+    return payload.error || payload.message || response.statusText;
+  } catch {
+    return text;
+  }
+}
+
 const chatSessionStorage = {
   getItem: (name) => {
     const value = sessionStorage.getItem(name);
@@ -70,6 +82,7 @@ export const useChatStore = create(
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+              action: 'sendMessage',
               chatInput: message,
               message,
               sessionId,
@@ -77,7 +90,7 @@ export const useChatStore = create(
           });
 
           if (!response.ok) {
-            const errorText = await response.text().catch(() => response.statusText);
+            const errorText = await readChatError(response);
             throw new Error(errorText || response.statusText);
           }
 

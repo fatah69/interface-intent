@@ -2,7 +2,10 @@ import { modules } from '../config/resources';
 import { actionTargetFields, actionTypeTarget, relationResourceByColumn } from '../config/resourceOptions';
 
 export function emptyRecord(fields) {
-  return fields.reduce((record, field) => ({ ...record, [field.key]: field.type === 'json' ? '{}' : '' }), {});
+  return fields.reduce((record, field) => {
+    const value = field.type === 'json' ? '{}' : field.type === 'multiRelation' ? [] : '';
+    return { ...record, [field.key]: value };
+  }, {});
 }
 
 export function normalizeList(value) {
@@ -44,6 +47,9 @@ export function itemLabel(resource, item, data) {
   if (resource === 'externalData') return `#${id} | ${item.protocol_request || 'external'}${item.host ? ` | ${item.host}` : ''}`;
   if (resource === 'semanticSearches') return `#${id} | ${item.collection_name || 'Semantic Search'}`;
   if (resource === 'utilities') return `#${id} | ${item.key || 'Utility'}`;
+  if (resource === 'roles') return `#${id} | ${item.name || 'Role'}`;
+  if (resource === 'usecases') return `#${id} | ${item.name || 'Usecase'}`;
+  if (resource === 'users') return `#${id} | ${item.username || item.email || 'User'}`;
 
   return item.agent_name || item.collection_name || item.name || item.key || item.context || `#${id}`;
 }
@@ -107,12 +113,43 @@ export function validateJson(value) {
   }
 }
 
+export function validateEmail(value) {
+  const email = String(value || '').trim();
+  if (!email) return '';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return 'Format email tidak valid. Gunakan format seperti nama@gmail.com.';
+  }
+  return '';
+}
+
 export function visibleFields(resource, fields, record) {
   if (resource !== 'actions') return fields;
   return fields.filter((field) => !field.actionType || field.actionType === record.action_type);
 }
 
-export function preparePayload(resource, record) {
+export function normalizeFormRecord(resource, record) {
+  const next = { ...record };
+
+  if (resource === 'users') {
+    if (!next.role_id && next.role?.id) next.role_id = next.role.id;
+    if (!Array.isArray(next.usecase_ids)) {
+      if (Array.isArray(next.usecases)) {
+        next.usecase_ids = next.usecases.map((usecase) => usecase.id).filter((id) => id != null);
+      } else {
+        next.usecase_ids = [];
+      }
+    }
+    next.password = '';
+  }
+
+  if (resource === 'intents' && !next.usecase_id && next.usecase?.id) {
+    next.usecase_id = next.usecase.id;
+  }
+
+  return next;
+}
+
+export function preparePayload(resource, record, mode = 'create') {
   const payload = { ...record };
 
   if (resource === 'actions') {
@@ -128,10 +165,23 @@ export function preparePayload(resource, record) {
     }
   });
 
+  if (resource === 'users') {
+    payload.role_id = payload.role_id === '' || payload.role_id == null ? null : Number(payload.role_id);
+    payload.usecase_ids = Array.isArray(payload.usecase_ids)
+      ? payload.usecase_ids.map(Number).filter((value) => Number.isFinite(value))
+      : [];
+    if (mode === 'edit' && !String(payload.password || '').trim()) delete payload.password;
+    delete payload.role;
+    delete payload.usecases;
+  }
+
+  delete payload.created_at;
+  delete payload.updated_at;
+
   return payload;
 }
 
-export function validateRecord(resource, record) {
+export function validateRecord(resource, record, mode = 'create') {
   const errors = [];
   const config = modules[resource];
 
@@ -139,9 +189,16 @@ export function validateRecord(resource, record) {
     if (field.required && !String(record[field.key] ?? '').trim()) {
       errors.push(`${field.label} wajib diisi.`);
     }
+    if (field.createRequired && mode === 'create' && !String(record[field.key] ?? '').trim()) {
+      errors.push(`${field.label} wajib diisi.`);
+    }
     if (field.type === 'json') {
       const jsonError = validateJson(record[field.key]);
       if (jsonError) errors.push(`${field.label}: ${jsonError}`);
+    }
+    if (field.type === 'email') {
+      const emailError = validateEmail(record[field.key]);
+      if (emailError) errors.push(`${field.label}: ${emailError}`);
     }
   }
 
@@ -196,6 +253,16 @@ export function renderValue(resource, row, column, data) {
 
   if (relationResourceByColumn[column]) {
     return labelFor(relationResourceByColumn[column], row[column], data);
+  }
+
+  if (column === 'usecase_ids') {
+    const ids = Array.isArray(row.usecase_ids)
+      ? row.usecase_ids
+      : Array.isArray(row.usecases)
+        ? row.usecases.map((usecase) => usecase.id)
+        : [];
+    if (!ids.length) return <span className="muted-cell">-</span>;
+    return ids.map((id) => labelFor('usecases', id, data)).join(', ');
   }
 
   return String(row[column] ?? '-');
