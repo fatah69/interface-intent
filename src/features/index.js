@@ -9,7 +9,7 @@ import { SemanticSearchPage } from './semantic-search/Page';
 import { UsecasesPage } from './usecases/Page';
 import { UsersPage } from './users/Page';
 import { UtilitiesPage } from './utilities/Page';
-import { VectorCollectionsPage } from './vector-collections/Page';
+import { VectorCollectionFilesPage, VectorCollectionsPage, VectorKnowledgeUploadPage } from './vector-collections/Page';
 
 export const featurePages = {
   intents: IntentsPage,
@@ -22,6 +22,8 @@ export const featurePages = {
   usecases: UsecasesPage,
   utilities: UtilitiesPage,
   vectorCollections: VectorCollectionsPage,
+  vectorKnowledgeUpload: VectorKnowledgeUploadPage,
+  vectorCollectionFiles: VectorCollectionFilesPage,
   users: UsersPage,
   chat: ChatPage,
 };

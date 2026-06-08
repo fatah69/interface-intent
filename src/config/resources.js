@@ -9,7 +9,7 @@ import { rolePage } from '../features/roles/config';
 import { usecasePage } from '../features/usecases/config';
 import { userPage } from '../features/users/config';
 import { utilityPage } from '../features/utilities/config';
-import { vectorCollectionPage } from '../features/vector-collections/config';
+import { vectorCollectionFilesPage, vectorCollectionPage, vectorKnowledgeUploadPage } from '../features/vector-collections/config';
 
 export const modules = {
   intents: intentPage,
@@ -22,14 +22,15 @@ export const modules = {
   usecases: usecasePage,
   utilities: utilityPage,
   vectorCollections: vectorCollectionPage,
+  vectorKnowledgeUpload: vectorKnowledgeUploadPage,
+  vectorCollectionFiles: vectorCollectionFilesPage,
   users: userPage,
   chat: chatPage,
 };
 
-export const moduleOrder = ['intents', 'usecases', 'actions', 'externalData', 'agents', 'mappings', 'semanticSearches', 'utilities', 'vectorCollections', 'roles', 'users', 'chat'];
-export const supportResourceOrder = [];
-export const dataResourceOrder = [...moduleOrder.filter((key) => key !== 'chat'), ...supportResourceOrder];
-export const emptyData = Object.fromEntries([...moduleOrder, ...supportResourceOrder].map((key) => [key, []]));
+export const moduleOrder = ['intents', 'usecases', 'actions', 'externalData', 'agents', 'mappings', 'semanticSearches', 'utilities', 'vectorCollections', 'vectorKnowledgeUpload', 'vectorCollectionFiles', 'roles', 'users', 'chat'];
+export const dataResourceOrder = ['intents', 'usecases', 'actions', 'externalData', 'agents', 'mappings', 'semanticSearches', 'utilities', 'vectorCollections', 'roles', 'users'];
+export const emptyData = Object.fromEntries(moduleOrder.map((key) => [key, []]));
 
 export const routeByModule = {
   intents: '/intents',
@@ -41,6 +42,8 @@ export const routeByModule = {
   usecases: '/usecases',
   utilities: '/utilities',
   vectorCollections: '/vector-collections',
+  vectorKnowledgeUpload: '/vector-collections/upload',
+  vectorCollectionFiles: '/vector-collections/files',
   roles: '/roles',
   users: '/users',
   chat: '/chat',
@@ -66,7 +69,14 @@ export const navGroups = [
         ],
       },
       { key: 'utilities' },
-      { key: 'vectorCollections' },
+      {
+        key: 'vectorCollections',
+        defaultChild: 'vectorKnowledgeUpload',
+        children: [
+          { key: 'vectorKnowledgeUpload' },
+          { key: 'vectorCollectionFiles' },
+        ],
+      },
       { key: 'roles' },
       { key: 'users' },
       { key: 'chat' },

@@ -98,11 +98,6 @@ function targetSummary(target) {
   return { title: target.label, meta: target.id ? `#${target.id}` : '' };
 }
 
-export function actionLabel(action, data) {
-  if (!action) return '-';
-  return itemLabel('actions', action, data);
-}
-
 export function validateJson(value) {
   if (!String(value || '').trim()) return '';
   try {
@@ -227,7 +222,7 @@ export function renderValue(resource, row, column, data) {
   }
 
   if (column === 'action_summary') {
-    const action = data.actions.find((entry) => String(entry.id) === String(row.action_id));
+    const action = (data.actions || []).find((entry) => String(entry.id) === String(row.action_id));
     if (!action) return <span className="muted-cell">{row.action_id || '-'}</span>;
     const target = getActionTarget(action, data);
     const summary = targetSummary(target);

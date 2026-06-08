@@ -41,19 +41,35 @@ async function readChatError(response) {
 
 const chatSessionStorage = {
   getItem: (name) => {
-    const value = sessionStorage.getItem(name);
-    if (!value) return null;
+    try {
+      const value = globalThis.sessionStorage?.getItem(name);
+      if (!value) return null;
 
-    const parsed = JSON.parse(value);
-    if (parsed?.state) return parsed;
-
-    return { state: parsed };
+      const parsed = JSON.parse(value);
+      if (parsed?.state) return parsed;
+      return { state: parsed };
+    } catch {
+      try {
+        globalThis.sessionStorage?.removeItem(name);
+      } catch {
+        // Chat can start clean even when browser storage is unavailable.
+      }
+      return null;
+    }
   },
   setItem: (name, value) => {
-    sessionStorage.setItem(name, JSON.stringify(value));
+    try {
+      globalThis.sessionStorage?.setItem(name, JSON.stringify(value));
+    } catch {
+      // Chat stays available even when browser storage blocks writes.
+    }
   },
   removeItem: (name) => {
-    sessionStorage.removeItem(name);
+    try {
+      globalThis.sessionStorage?.removeItem(name);
+    } catch {
+      // Ignore unavailable browser storage.
+    }
   },
 };
 

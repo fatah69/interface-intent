@@ -93,7 +93,7 @@ export function LoginPage() {
 
           <div className="auth-footnote">
             <ShieldCheck size={15} />
-            <span>Session memakai Bearer token dari API.</span>
+        <span>Session tersimpan setelah login.</span>
           </div>
         </div>
       </section>

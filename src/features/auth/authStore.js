@@ -68,9 +68,3 @@ configureAuth({
   getToken: () => useAuthStore.getState().token,
   onUnauthorized: () => useAuthStore.getState().handleUnauthorized(),
 });
-
-export const authStore = {
-  loadProfile: () => useAuthStore.getState().loadProfile(),
-  login: (payload) => useAuthStore.getState().login(payload),
-  logout: () => useAuthStore.getState().logout(),
-};

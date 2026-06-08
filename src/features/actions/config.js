@@ -5,7 +5,7 @@ export const actionPage = {
   title: 'Actions',
   singular: 'Action',
   icon: Network,
-  description: 'Atur tipe action dan satu target sesuai business rule API.',
+  description: 'Atur tipe action dan satu target sesuai aturan data.',
   fields: [
     { key: 'action_type', label: 'Action Type', type: 'select', options: actionTypes, required: true },
     { key: 'semantic_search_id', label: 'Semantic Search Target', type: 'relation', resource: 'semanticSearches', actionType: 'semantic_search' },

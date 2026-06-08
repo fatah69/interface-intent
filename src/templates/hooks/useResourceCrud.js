@@ -171,7 +171,7 @@ export function useResourceCrud({ resource, data, loadData, setApiStatus }) {
     try {
       return normalizeRecord(await api.detail(resource, row.id));
     } catch {
-      setApiStatus(`Endpoint detail ${config.singular} gagal, memakai data dari list.`);
+      setApiStatus(`Detail ${config.singular} belum berhasil dibuka, memakai data dari daftar.`);
       return row;
     }
   }
@@ -218,17 +218,25 @@ export function useResourceCrud({ resource, data, loadData, setApiStatus }) {
       if (resource === 'users' && modal.mode === 'edit') {
         await api.update(resource, modal.id, userUpdatePayload(payload, { includeRole: false }));
         if (payload.role_id != null && String(payload.role_id) !== String(modal.originalRoleId ?? '')) {
-          await api.assignUserRole(modal.id, payload.role_id);
+          try {
+            await api.assignUserRole(modal.id, payload.role_id);
+          } catch (roleError) {
+            await loadData();
+            setErrors([`Data user tersimpan, tapi role belum berhasil diubah: ${roleError.message || 'akses gagal'}.`]);
+            setApiStatus('Data user tersimpan, tapi role belum berhasil diubah.');
+            setModal(null);
+            return;
+          }
         }
       } else {
         if (modal.mode === 'create') await api.create(resource, payload);
         if (modal.mode === 'edit') await api.update(resource, modal.id, payload);
       }
-      setApiStatus('Perubahan berhasil dikirim ke API.');
+      setApiStatus('Perubahan berhasil disimpan.');
       await loadData();
     } catch (error) {
-      setErrors([`Gagal menyimpan ke API: ${error.message || 'request gagal'}.`]);
-      setApiStatus('Perubahan tidak disimpan karena API gagal merespons.');
+      setErrors([`Gagal menyimpan: ${error.message || 'akses gagal'}.`]);
+      setApiStatus('Perubahan belum tersimpan. Coba lagi setelah koneksi tersedia.');
       return;
     } finally {
       setBusy(false);
@@ -254,11 +262,11 @@ export function useResourceCrud({ resource, data, loadData, setApiStatus }) {
     try {
       await api.remove(resource, confirmation.row.id);
       await loadData();
-      setApiStatus('Data berhasil dihapus dari API.');
+      setApiStatus('Data berhasil dihapus.');
       setConfirmation(null);
     } catch (error) {
-      setErrors([`Gagal menghapus dari API: ${error.message || 'request gagal'}.`]);
-      setApiStatus('Data tidak dihapus karena API gagal merespons.');
+      setErrors([`Gagal menghapus: ${error.message || 'akses gagal'}.`]);
+      setApiStatus('Data belum terhapus. Coba lagi setelah koneksi tersedia.');
       setConfirmation(null);
     }
   }

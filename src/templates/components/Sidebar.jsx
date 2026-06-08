@@ -22,14 +22,15 @@ function NavButton({ item, active, data, user, navigate, openBranches, onToggleB
   const Icon = config.icon;
   const visibleChildren = (item.children || []).filter((child) => canSeeItem(child, user));
   const hasChildren = visibleChildren.length > 0;
-  const isOpen = openBranches[item.key] ?? false;
+  const hasActiveChild = visibleChildren.some((child) => child.key === active);
+  const isOpen = openBranches[item.key] ?? hasActiveChild;
   const ToggleIcon = isOpen ? ChevronDown : ChevronRight;
   const canRead = api.can(item.key, 'read');
-  const showCount = !['chat', 'vectorCollections'].includes(item.key);
+  const showCount = !['chat', 'vectorCollections', 'vectorKnowledgeUpload', 'vectorCollectionFiles'].includes(item.key);
   const countLabel = canRead ? String(data[item.key]?.length || 0) : '-';
 
   function selectItem() {
-    navigate(routeByModule[item.key]);
+    navigate(routeByModule[item.defaultChild || item.key]);
     if (hasChildren && !isOpen) onToggleBranch(item.key);
   }
 
@@ -40,10 +41,10 @@ function NavButton({ item, active, data, user, navigate, openBranches, onToggleB
 
   return (
     <div className={nested ? 'nav-branch nested' : 'nav-branch'}>
-      <button className={`${active === item.key ? 'nav-item active' : 'nav-item'}${hasChildren ? ' has-children' : ''}`} onClick={selectItem} type="button">
+      <button className={`${active === item.key || hasActiveChild ? 'nav-item active' : 'nav-item'}${hasChildren ? ' has-children' : ''}`} onClick={selectItem} type="button">
         <Icon size={18} />
         <span>{config.title}</span>
-        {showCount && <small title={canRead ? `${countLabel} records loaded` : 'List endpoint unavailable'}>{countLabel}</small>}
+        {showCount && <small title={canRead ? `${countLabel} data dimuat` : 'Data belum tersedia'}>{countLabel}</small>}
         {hasChildren && (
           <span className="nav-chevron" onClick={toggleSubmenu} title={isOpen ? 'Hide submenu' : 'Show submenu'}>
             <ToggleIcon size={15} />

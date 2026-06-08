@@ -11,6 +11,6 @@ export const agentUtilityPage = {
     { key: 'client_id', label: 'Client ID', type: 'text', required: true },
   ],
   columns: ['id', 'ai_agent_id', 'utility_id', 'client_id'],
-  unavailableTitle: 'List Agent Utilities belum tersedia di API',
-  unavailableDetails: ['GET /api/ai-agent-utilities/', 'PUT /api/ai-agent-utilities/{id}', 'DELETE /api/ai-agent-utilities/{id}'],
+  unavailableTitle: 'Daftar Agent Utilities belum tersedia',
+  unavailableDetails: ['Data belum bisa ditampilkan setelah dibuat.', 'Ubah dan hapus belum tersedia dari halaman ini.'],
 };

@@ -16,7 +16,11 @@ function loadSelectedCollection() {
 
 function saveSelectedCollection(collectionName) {
   try {
-    if (collectionName) globalThis.sessionStorage?.setItem(selectedCollectionStorageKey, collectionName);
+    if (collectionName) {
+      globalThis.sessionStorage?.setItem(selectedCollectionStorageKey, collectionName);
+    } else {
+      globalThis.sessionStorage?.removeItem(selectedCollectionStorageKey);
+    }
   } catch {
     // The picker remains usable even if browser storage is unavailable.
   }
@@ -40,8 +44,42 @@ const modeMeta = {
   pdf: { title: 'Upload PDF' },
 };
 
+const uploadStepLabels = {
+  file: 'File tersimpan',
+  knowledge: 'Knowledge diproses untuk pencarian',
+};
+
 function getCollectionName(item) {
   return item?.name || item?.collection_name || '';
+}
+
+function readCollectionFileLabel(item) {
+  if (!item?.cmetadata) return '';
+
+  try {
+    const metadata = typeof item.cmetadata === 'string' ? JSON.parse(item.cmetadata) : item.cmetadata;
+    return metadata?.filename || metadata?.file_name || metadata?.title || metadata?.name || '';
+  } catch {
+    return '';
+  }
+}
+
+function createCollectionUuid() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+
+  const bytes = new Uint8Array(16);
+  if (globalThis.crypto?.getRandomValues) {
+    globalThis.crypto.getRandomValues(bytes);
+  } else {
+    bytes.forEach((_, index) => {
+      bytes[index] = Math.floor(Math.random() * 256);
+    });
+  }
+
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0'));
+  return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex.slice(6, 8).join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10).join('')}`;
 }
 
 export function VectorCollectionPanel({ semanticCollections = [], vectorCollections = [], loading, onRefresh }) {
@@ -54,6 +92,7 @@ export function VectorCollectionPanel({ semanticCollections = [], vectorCollecti
   const [activeMode, setActiveMode] = useState('text');
   const [status, setStatus] = useState('');
   const [statusType, setStatusType] = useState('neutral');
+  const [uploadSteps, setUploadSteps] = useState([]);
   const [loadingAction, setLoadingAction] = useState('');
   const fileInputRef = useRef(null);
 
@@ -69,9 +108,14 @@ export function VectorCollectionPanel({ semanticCollections = [], vectorCollecti
   }, [collectionOptions, collectionQuery]);
   const activeMeta = modeMeta[activeMode];
   const hasCollections = collectionOptions.length > 0;
+  const selectedCollection = collectionName ? findApiCollection(collectionName) : null;
+  const selectedFileLabel = readCollectionFileLabel(selectedCollection);
 
   useEffect(() => {
-    if (!hasCollections) return;
+    if (!hasCollections) {
+      if (collectionName) setCollectionName('');
+      return;
+    }
     if (collectionName && collectionOptions.includes(collectionName)) return;
 
     const savedCollection = loadSelectedCollection();
@@ -95,6 +139,14 @@ export function VectorCollectionPanel({ semanticCollections = [], vectorCollecti
   function resetStatus() {
     setStatusType('neutral');
     setStatus('');
+    setUploadSteps([]);
+  }
+
+  function setUploadStepState(fileState, knowledgeState) {
+    setUploadSteps([
+      { key: 'file', label: uploadStepLabels.file, state: fileState },
+      { key: 'knowledge', label: uploadStepLabels.knowledge, state: knowledgeState },
+    ]);
   }
 
   function selectCollection(option) {
@@ -141,7 +193,7 @@ export function VectorCollectionPanel({ semanticCollections = [], vectorCollecti
     if (existing?.uuid) return existing;
 
     const payload = {
-      uuid: crypto.randomUUID(),
+      uuid: createCollectionUuid(),
       name: collectionName,
       cmetadata: '{}',
     };
@@ -152,23 +204,35 @@ export function VectorCollectionPanel({ semanticCollections = [], vectorCollecti
   async function uploadOriginalFileToApi(fileToUpload) {
     const apiCollection = await ensureApiCollection();
     const uuid = apiCollection?.uuid;
-    if (!uuid) throw new Error('API tidak mengembalikan UUID vector collection.');
+    if (!uuid) throw new Error('Data collection belum lengkap.');
     await api.uploadVectorCollectionFile(uuid, fileToUpload);
     await onRefresh?.();
     return uuid;
   }
 
-  async function runRequest(action, request) {
+  async function runUpload(action, fileToUpload, indexKnowledge) {
     if (!ensureCollection()) return;
     setLoadingAction(action);
     setStatusType('neutral');
-    setStatus('Mengirim data...');
+    setStatus('Menyimpan file...');
+    setUploadStepState('active', 'waiting');
+
+    let fileSaved = false;
     try {
-      const result = await request();
+      await uploadOriginalFileToApi(fileToUpload);
+      fileSaved = true;
+      setUploadStepState('done', 'active');
+      setStatus('File tersimpan. Knowledge sedang diproses...');
+
+      const result = await indexKnowledge();
+      setUploadStepState('done', 'done');
       setStatusType('success');
-      setStatus(result || `Berhasil upload ke ${collectionName}.`);
+      setStatus(result || `Knowledge siap dipakai di ${collectionName}.`);
     } catch (error) {
-      setError(error.message || 'Request upload gagal.');
+      setUploadStepState(fileSaved ? 'done' : 'error', fileSaved ? 'error' : 'waiting');
+      setError(fileSaved
+        ? `File tersimpan, tapi knowledge belum berhasil diproses: ${error.message || 'akses gagal'}.`
+        : `File belum berhasil disimpan: ${error.message || 'akses gagal'}.`);
     } finally {
       setLoadingAction('');
     }
@@ -176,13 +240,14 @@ export function VectorCollectionPanel({ semanticCollections = [], vectorCollecti
 
   async function viewVectorFile(item) {
     if (!item?.uuid) {
-      setError('UUID collection tidak tersedia dari API vector.');
+      setError('Identitas collection belum tersedia.');
       return;
     }
 
     setLoadingAction(`view-${item.uuid}`);
     setStatusType('neutral');
-    setStatus('Membuka file collection dari API...');
+    setUploadSteps([]);
+    setStatus('Membuka file collection...');
     try {
       const { blob, contentType, filename } = await api.vectorCollectionFile(item.uuid);
       const fileBlob = blob.type ? blob : new Blob([blob], { type: contentType });
@@ -202,7 +267,7 @@ export function VectorCollectionPanel({ semanticCollections = [], vectorCollecti
       setStatusType('success');
       setStatus(`File collection dibuka: ${getCollectionName(item) || item.uuid}.`);
     } catch (error) {
-      setError(error.message || 'Gagal membuka file collection dari API.');
+      setError(error.message || 'Gagal membuka file collection.');
     } finally {
       setLoadingAction('');
     }
@@ -221,8 +286,7 @@ export function VectorCollectionPanel({ semanticCollections = [], vectorCollecti
       return;
     }
 
-    runRequest('text', async () => {
-      await uploadOriginalFileToApi(createTextFile(cleanText));
+    runUpload('text', createTextFile(cleanText), async () => {
       const response = await fetch('/vector-webhook', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -239,8 +303,7 @@ export function VectorCollectionPanel({ semanticCollections = [], vectorCollecti
       return;
     }
 
-    runRequest('pdf', async () => {
-      await uploadOriginalFileToApi(file);
+    runUpload('pdf', file, async () => {
       const formData = new FormData();
       formData.append('type', 'pdf');
       formData.append('collection_name', collectionName);
@@ -272,6 +335,7 @@ export function VectorCollectionPanel({ semanticCollections = [], vectorCollecti
 
     setFile(selectedFile);
     setStatusType('neutral');
+    setUploadSteps([]);
     setStatus(`PDF siap diupload: ${selectedFile.name}.`);
   }
 
@@ -364,33 +428,40 @@ export function VectorCollectionPanel({ semanticCollections = [], vectorCollecti
           </div>
         ) : (
           <>
-            <div className="vector-read-panel">
-              <div>
-                <strong>Vector collections</strong>
-                <span>{vectorCollections.length ? `${vectorCollections.length} collection dari API` : 'Belum ada collection dari API vector.'}</span>
-              </div>
-              {vectorCollections.length > 0 && (
-                <div className="vector-collection-list">
-                  {vectorCollections.slice(0, 8).map((item) => (
-                    <div className="vector-collection-row" key={item.uuid || item.name}>
-                      <div>
-                        <strong title={getCollectionName(item) || item.uuid}>{getCollectionName(item) || item.uuid}</strong>
-                        <small title={item.uuid}>{item.uuid || 'UUID tidak tersedia'}</small>
-                        {item.cmetadata && <small title={item.cmetadata}>{item.cmetadata}</small>}
-                      </div>
-                      <button
-                        className="secondary-button"
-                        type="button"
-                        onClick={() => viewVectorFile(item)}
-                        disabled={busy || !item.uuid}
-                      >
-                        <ExternalLink size={15} />
-                        {loadingAction === `view-${item.uuid}` ? 'Opening...' : 'View File'}
-                      </button>
-                    </div>
-                  ))}
-                  {vectorCollections.length > 8 && <div className="vector-collection-more">{vectorCollections.length - 8}+ collection lainnya</div>}
+            <div className="vector-read-panel collection-workspace-panel">
+              <div className="collection-workspace-head">
+                <div>
+                  <strong>{collectionName || 'Collection belum dipilih'}</strong>
+                  <span>{selectedCollection ? 'Knowledge file tersedia untuk collection ini.' : 'Belum ada file tersimpan untuk collection ini.'}</span>
                 </div>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => viewVectorFile(selectedCollection)}
+                  disabled={busy || !selectedCollection?.uuid}
+                >
+                  <ExternalLink size={15} />
+                  {loadingAction === `view-${selectedCollection?.uuid}` ? 'Opening...' : 'View File'}
+                </button>
+              </div>
+
+              <div className="collection-workspace-meta">
+                <div>
+                  <span>Status file</span>
+                  <strong>{selectedCollection ? 'Tersimpan' : 'Belum tersimpan'}</strong>
+                </div>
+                <div>
+                  <span>Nama file</span>
+                  <strong>{selectedFileLabel || (selectedCollection ? getCollectionName(selectedCollection) : '-')}</strong>
+                </div>
+                <div>
+                  <span>Total collection</span>
+                  <strong>{vectorCollections.length.toLocaleString('id-ID')}</strong>
+                </div>
+              </div>
+
+              {!selectedCollection && (
+                <p className="collection-workspace-note">Upload Text atau PDF untuk menyimpan knowledge ke collection yang dipilih.</p>
               )}
             </div>
 
@@ -467,7 +538,16 @@ export function VectorCollectionPanel({ semanticCollections = [], vectorCollecti
         )}
       </div>
 
-      <div className={`vector-status ${statusType}`}>{statusMessage}</div>
+      <div className={`vector-status ${statusType}`}>
+        <span>{statusMessage}</span>
+        {uploadSteps.length > 0 && (
+          <div className="vector-status-steps">
+            {uploadSteps.map((step) => (
+              <span className={`vector-status-step ${step.state}`} key={step.key}>{step.label}</span>
+            ))}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

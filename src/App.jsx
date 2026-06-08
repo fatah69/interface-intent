@@ -11,7 +11,7 @@ import { normalizeList } from './utils/resourceUtils.jsx';
 function App() {
   const { initialized, loadProfile, logout, token, user } = useAuthStore();
   const [data, setData] = useState(emptyData);
-  const [apiStatus, setApiStatus] = useState('Menunggu data real dari API.');
+  const [apiStatus, setApiStatus] = useState('Menunggu data.');
   const [loading, setLoading] = useState(false);
 
   async function loadData() {
@@ -45,11 +45,11 @@ function App() {
 
     setData(nextData);
     if (failedResources.length === 0 && successCount > 0) {
-      setApiStatus('Data real dimuat dari endpoint Swagger yang tersedia.');
+      setApiStatus('Data terbaru berhasil dimuat.');
     } else if (successCount > 0) {
-      setApiStatus(`Sebagian endpoint gagal dimuat: ${failedResources.join(', ')}.`);
+      setApiStatus(`Sebagian data belum berhasil dimuat: ${failedResources.join(', ')}.`);
     } else {
-      setApiStatus('API lokal belum bisa diakses. Tidak ada data yang ditampilkan.');
+      setApiStatus('Data belum bisa dimuat. Periksa koneksi atau sesi login.');
     }
     setLoading(false);
   }

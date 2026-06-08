@@ -8,7 +8,7 @@ export function ResourceToolbar({ config, query, onQueryChange, onCreate, disabl
         <input value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder={`Search ${config.title.toLowerCase()}`} />
       </div>
       {children || (
-        <button className="primary-button" onClick={onCreate} disabled={disabled || !canCreate} title={canCreate ? `Add ${config.singular}` : 'Endpoint create belum tersedia'}>
+      <button className="primary-button" onClick={onCreate} disabled={disabled || !canCreate} title={canCreate ? `Add ${config.singular}` : 'Tambah belum tersedia'}>
           <Plus size={18} />
           {canCreate ? `Add ${config.singular}` : 'Create unavailable'}
         </button>

@@ -25,7 +25,7 @@ export function configureAuth({ getToken, onUnauthorized } = {}) {
 function getEndpoint(resource, action) {
   const endpoint = endpoints[resource];
   if (!endpoint?.path || !endpoint[action]) {
-    throw new Error(`Endpoint ${action} untuk ${resource} belum tersedia di Swagger.`);
+    throw new Error(`Fitur ${action} untuk ${resource} belum tersedia.`);
   }
   return endpoint.path;
 }

@@ -49,10 +49,10 @@ export function ResourceTable({ resource, config, data, rows, pagination, sort, 
                   <button className="ghost-button" onClick={() => onView(row)} title="View details">
                     <Eye size={16} />
                   </button>
-                  <button className="ghost-button" onClick={() => onEdit(row)} title={canUpdate ? 'Edit' : 'Endpoint update belum tersedia'} disabled={!canUpdate}>
+            <button className="ghost-button" onClick={() => onEdit(row)} title={canUpdate ? 'Edit' : 'Data ini belum bisa diubah'} disabled={!canUpdate}>
                     <Pencil size={16} />
                   </button>
-                  <button className="ghost-button danger" onClick={() => onDelete(row)} title={canRemove ? 'Delete' : 'Endpoint delete belum tersedia'} disabled={!canRemove}>
+            <button className="ghost-button danger" onClick={() => onDelete(row)} title={canRemove ? 'Delete' : 'Data ini belum bisa dihapus'} disabled={!canRemove}>
                     <Trash2 size={16} />
                   </button>
                 </td>
