@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, ChevronDown, ExternalLink, FileUp, Search, Send, X } from 'lucide-react';
 import { api } from '../../../api/client';
+import { vectorCollectionFileLabel } from '../metadata';
 
 const selectedCollectionStorageKey = 'intent-agent-vector-collection';
 const maxTextCharacters = 50000;
@@ -53,17 +54,6 @@ function getCollectionName(item) {
   return item?.name || item?.collection_name || '';
 }
 
-function readCollectionFileLabel(item) {
-  if (!item?.cmetadata) return '';
-
-  try {
-    const metadata = typeof item.cmetadata === 'string' ? JSON.parse(item.cmetadata) : item.cmetadata;
-    return metadata?.filename || metadata?.file_name || metadata?.title || metadata?.name || '';
-  } catch {
-    return '';
-  }
-}
-
 function createCollectionUuid() {
   if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
 
@@ -109,7 +99,7 @@ export function VectorCollectionPanel({ semanticCollections = [], vectorCollecti
   const activeMeta = modeMeta[activeMode];
   const hasCollections = collectionOptions.length > 0;
   const selectedCollection = collectionName ? findApiCollection(collectionName) : null;
-  const selectedFileLabel = readCollectionFileLabel(selectedCollection);
+  const selectedFileLabel = vectorCollectionFileLabel(selectedCollection);
 
   useEffect(() => {
     if (!hasCollections) {

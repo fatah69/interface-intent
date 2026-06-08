@@ -65,6 +65,7 @@ Do not add a separate Vectors CRUD page until the API exposes direct read endpoi
 - Vector Collections is organized around the selected collection: choose the target collection first, then view the saved knowledge file and upload Text/PDF for that collection.
 - Vector Collections is split into two sidebar children: Upload Knowledge for Text/PDF upload, and Collection Files for browsing/viewing saved knowledge files.
 - Clicking the Vector Collections parent opens Upload Knowledge by default, so the parent does not need its own empty landing page.
+- Vector Collection file labels are parsed defensively from `cmetadata`, including plain path strings, JSON objects, and JSON arrays when the backend returns more than one metadata entry.
 - n8n async responses such as `executionStarted` are rendered as readable workflow status.
 - Page code remains feature-based; `App.jsx` stays as app shell/router.
 

@@ -6,21 +6,7 @@ import { PageHeader, StatusStrip } from '../../templates/components/PageHeader';
 import { routeByModule } from '../../config/resources';
 import { VectorCollectionPanel } from './components/VectorCollectionPanel';
 import { vectorCollectionFilesPage, vectorKnowledgeUploadPage } from './config';
-
-function collectionName(item) {
-  return item?.name || item?.collection_name || item?.uuid || '-';
-}
-
-function collectionFileLabel(item) {
-  if (!item?.cmetadata) return '';
-
-  try {
-    const metadata = typeof item.cmetadata === 'string' ? JSON.parse(item.cmetadata) : item.cmetadata;
-    return metadata?.filename || metadata?.file_name || metadata?.title || metadata?.name || '';
-  } catch {
-    return '';
-  }
-}
+import { vectorCollectionFileLabel, vectorCollectionName, vectorCollectionSearchText, vectorMetadataFiles } from './metadata';
 
 function openFilePreview({ blob, contentType }) {
   const fileBlob = blob.type ? blob : new Blob([blob], { type: contentType });
@@ -71,9 +57,7 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
   const filteredCollections = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return vectorCollections;
-    return vectorCollections.filter((item) => [collectionName(item), collectionFileLabel(item), item.uuid, item.cmetadata]
-      .filter(Boolean)
-      .join(' ')
+    return vectorCollections.filter((item) => vectorCollectionSearchText(item)
       .toLowerCase()
       .includes(needle));
   }, [query, vectorCollections]);
@@ -88,7 +72,7 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
       const file = await api.vectorCollectionFile(item.uuid);
       openFilePreview(file);
       setStatusType('success');
-      setStatus(`File dibuka di tab baru: ${collectionName(item)}.`);
+      setStatus(`File dibuka di tab baru: ${vectorCollectionName(item)}.`);
     } catch (error) {
       setStatusType('error');
       setStatus(error.message || 'Gagal membuka file collection.');
@@ -122,13 +106,14 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
               <span>Upload Text atau PDF dari menu Upload Knowledge untuk membuat file collection.</span>
             </div>
           ) : filteredCollections.map((item) => {
-            const name = collectionName(item);
-            const fileLabel = collectionFileLabel(item);
+            const name = vectorCollectionName(item);
+            const files = vectorMetadataFiles(item);
+            const fileLabel = vectorCollectionFileLabel(item);
             return (
               <div className="collection-file-row" key={item.uuid || name}>
                 <div>
                   <strong title={name}>{name}</strong>
-                  <span title={fileLabel || name}>{fileLabel || 'File collection tersimpan'}</span>
+                  <span title={files.map((entry) => entry.label).join(', ') || name}>{files.length > 1 ? `${files.length} file tersimpan` : fileLabel || 'File collection tersimpan'}</span>
                 </div>
                 <button className="secondary-button" type="button" onClick={() => setSelectedFile(item)} disabled={loading || !item.uuid}>Detail</button>
               </div>
@@ -145,16 +130,24 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
             <div className="drawer-header">
               <div>
                 <p className="eyebrow">Collection File</p>
-                <h2>{collectionName(selectedFile)}</h2>
+                <h2>{vectorCollectionName(selectedFile)}</h2>
               </div>
               <button type="button" className="ghost-button" onClick={() => setSelectedFile(null)}><X size={18} /></button>
             </div>
 
             <dl className="detail-list">
               <div><dt>Status file</dt><dd>{selectedFile.uuid ? 'Tersimpan' : 'Belum tersimpan'}</dd></div>
-              <div><dt>Nama file</dt><dd>{collectionFileLabel(selectedFile) || 'File collection tersimpan'}</dd></div>
-              <div><dt>Collection</dt><dd>{collectionName(selectedFile)}</dd></div>
+              <div><dt>Nama file</dt><dd>{vectorCollectionFileLabel(selectedFile) || 'File collection tersimpan'}</dd></div>
+              <div><dt>Collection</dt><dd>{vectorCollectionName(selectedFile)}</dd></div>
             </dl>
+
+            {vectorMetadataFiles(selectedFile).length > 1 && (
+              <div className="collection-file-metadata-list">
+                {vectorMetadataFiles(selectedFile).map((entry) => (
+                  <span key={entry.id}>{entry.label}</span>
+                ))}
+              </div>
+            )}
 
             <div className="hint-box collection-file-hint">
               <ExternalLink size={16} />
