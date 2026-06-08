@@ -71,7 +71,7 @@ Endpoint berikut muncul di Swagger JSON aktif dan sudah dipetakan ke frontend bi
 | Semantic Search | `/api/semantic-searches/` | List, detail, create, update, delete |
 | Utilities | `/api/utilities` | List and create |
 | Agent Utilities | `/api/ai-agent-utilities/` | Create only |
-| Vector Collections | `/api/vector-collections` | List, detail/view file, create, upload file |
+| Vector Collections | `/api/vector-collections` | List saved collection rows, create row, upload original file, stream original file by UUID |
 
 Runtime slash behavior has previously differed from Swagger for `roles`, `usecases`, `users`, `utilities`, and `vector-collections`. Keep `src/api/client.js` on the known working paths unless a new live probe proves a change is safe.
 
@@ -80,7 +80,7 @@ Runtime slash behavior has previously differed from Swagger for `roles`, `usecas
 | Method | Frontend path | Target | UI status |
 | --- | --- | --- | --- |
 | `POST` | `/chat-webhook` | n8n chat workflow | Exposed by AI Chat |
-| `POST` | `/vector-webhook` | n8n VectorDB workflow | Exposed by Vector Collections for text/PDF indexing |
+| `POST` | `/vector-webhook` | n8n VectorDB workflow | Exposed by Vector Collections > Upload Knowledge for text/PDF indexing |
 | `PUT` | `/vector-webhook` | n8n VectorDB workflow | Documented only; hidden from UI to avoid duplicate vector rows |
 
 Do not run write smoke tests against `/vector-webhook` without a cleanup path. If a test write is unavoidable, use `docs/VECTOR_TEST_CLEANUP.md` as the cleanup reference.
@@ -93,7 +93,7 @@ These operations are still not available as complete CRUD in Swagger/API and sho
 - Detail, update, and delete endpoints for Utilities.
 - Direct CRUD for `n8n_vectors`.
 
-Vector collection read/list/file upload is available through `/api/vector-collections`, but vector chunk rows remain managed by n8n/PGVector rather than a frontend CRUD page.
+Vector collection read/list/file upload is available through `/api/vector-collections`. Collection Files shows saved files in a paginated sortable table, displays upload time when the backend provides a timestamp, opens a frontend detail drawer before the original file is opened, and separates preview from explicit download. Vector chunk rows remain managed by n8n/PGVector rather than a frontend CRUD page.
 
 ## Frontend Behavior Notes
 

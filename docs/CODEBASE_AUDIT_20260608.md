@@ -6,7 +6,7 @@ This audit looks for holes, unused code/imports, and optimization opportunities.
 
 ## Verification Performed
 
-- `npm run build` passed after Phase 2 changes.
+- `npm run build` passed after Phase 3A changes.
 - Simple import usage scan over `src/**/*.js` and `src/**/*.jsx` found no obvious unused imports.
 - Grep scan checked risky patterns: direct `fetch`, storage access, `window.open`, `crypto.randomUUID`, exported helpers, and CRUD update paths.
 - Reviewed key shared modules manually: `src/App.jsx`, `src/api/client.js`, `src/templates/hooks/useResourceCrud.js`, `src/utils/resourceUtils.jsx`, `src/features/vector-collections/components/VectorCollectionPanel.jsx`, auth store, sidebar, table, modal, and production proxy.
@@ -31,6 +31,15 @@ Applied after Phase 1:
 - Added two-step Vector Collections upload status: file save and knowledge processing are shown separately.
 - Added partial-success handling for User edit when the user data update succeeds but role assignment fails.
 - Removed unused/future export leftovers: `authStore`, `actionLabel`, and `supportResourceOrder`.
+
+## Phase 3A Applied
+
+Applied after Phase 2:
+
+- Split Vector Collections into Upload Knowledge and Collection Files sidebar children.
+- Collection Files uses a paginated sortable table with upload time when available, opens a detail drawer before any original file is opened, and download is a separate explicit action.
+- Added defensive Vector Collection `cmetadata` parsing for plain path strings, JSON objects, JSON arrays, and common nested file metadata keys.
+- Vector Collection metadata parsing is used by Collection Files for file labels and search.
 
 ## Findings
 
@@ -94,6 +103,21 @@ If Swagger upload succeeds but n8n indexing fails, the original file can be visi
 Result:
 
 Both APIs are still used. The UI now shows separate status pills for `File tersimpan` and `Knowledge diproses untuk pencarian`, and distinguishes file-save failure from knowledge-processing failure.
+
+### Completed in Phase 3A - Vector file metadata parsing is defensive
+
+Evidence:
+
+- `src/features/vector-collections/metadata.js` centralizes Vector Collection name, file label, metadata list, and search text helpers.
+- Collection Files consumes the metadata helper for file labels and search.
+
+Context:
+
+Swagger defines `cmetadata` as a string, but live backend metadata may reasonably appear as a plain path string, a JSON object, or a JSON array if backend behavior evolves.
+
+Result:
+
+Collection file labels and search are more robust across these formats. If a future backend returns multiple metadata entries in one `cmetadata` value, the drawer can display the metadata labels, while Open File still uses the Swagger UUID stream endpoint.
 
 ### Completed in Phase 1 - `crypto.randomUUID()` fallback for Vector Collections
 
@@ -197,4 +221,3 @@ A simple import scan found no obvious unused imports in `src`. This is not as st
 1. Add ESLint and focused unit tests for utility/payload logic.
 2. Consider per-resource status tracking for list failures.
 3. Centralize webhook request handling after the current Vector and Chat flows settle.
-

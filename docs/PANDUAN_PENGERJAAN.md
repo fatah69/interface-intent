@@ -85,7 +85,7 @@ Request API memakai relative path `/api/...` dan diproxy oleh Vite/prod server k
 /vector-webhook -> http://103.140.90.131:5678/webhook/update-intent
 ```
 
-Navigasi dashboard memakai `react-router-dom`. Route utama saat ini adalah `/intents`, `/usecases`, `/actions`, `/external-data`, `/agents`, `/agent-utilities`, `/semantic-search`, `/utilities`, `/vector-collections`, `/roles`, `/users`, dan `/chat`. Root `/` redirect ke `/intents`.
+Navigasi dashboard memakai `react-router-dom`. Route utama saat ini adalah `/intents`, `/usecases`, `/actions`, `/external-data`, `/agents`, `/agent-utilities`, `/semantic-search`, `/utilities`, `/vector-collections/upload`, `/vector-collections/files`, `/roles`, `/users`, dan `/chat`. Root `/` redirect ke `/intents`, sedangkan `/vector-collections` redirect ke `/vector-collections/upload`.
 
 Jangan menambahkan mock data. Jika endpoint belum ada, biarkan capability di `src/api/client.js` bernilai `false` dan tampilkan unavailable state.
 
@@ -118,9 +118,12 @@ Semantic Search adalah registry collection untuk Action target melalui `/api/sem
 Current flow:
 
 1. Buat atau pilih collection dari Semantic Search.
-2. Vector Collections memastikan native collection row ada di `/api/vector-collections`.
+2. Upload Knowledge memastikan native collection row ada di `/api/vector-collections`.
 3. Upload original TXT/PDF ke `/api/vector-collections/{uuid}/upload`.
 4. Kirim konten yang sama ke n8n `/vector-webhook` untuk chunking/vector indexing.
+5. Collection Files menampilkan file collection yang tersimpan, membuka drawer detail dulu, lalu memisahkan preview file lewat Open File dari Download yang eksplisit.
+
+Label file di Collection Files dibaca dari `cmetadata` secara defensif. Format yang ditoleransi: path string biasa, JSON object, dan JSON array.
 
 Di ERD tidak ada FK antara `semantic_search` dan `n8n_vector_collections`. Hubungannya logical by name: `semantic_search.collection_name` harus sama dengan `n8n_vector_collections.name`.
 

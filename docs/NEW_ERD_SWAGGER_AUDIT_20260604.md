@@ -67,7 +67,7 @@ The frontend currently implements these Swagger-backed areas:
 - Agent Utilities: create only.
 - Roles: admin-only list and create.
 - Users: admin-only list, detail, create, update, assign role, delete, and usecase assignment.
-- Vector Collections: list native collections, create native collection row when needed, view/download uploaded file, upload original TXT/PDF file, then call n8n indexing.
+- Vector Collections: Upload Knowledge creates native collection rows when needed, uploads original TXT/PDF files, then calls n8n indexing. Collection Files lists saved native collection rows in a paginated sortable table, displays upload time when available, opens a detail drawer first, then separates original file preview through Open File from explicit Download.
 
 AI Chat is not Swagger CRUD. It posts to n8n via `/chat-webhook` with `chatInput`, `message`, and `sessionId`.
 
@@ -102,6 +102,7 @@ Current codebase matches the ERD/Swagger direction:
 - `src/features/users/config.js` includes `role_id` and `usecase_ids`.
 - `src/api/client.js` includes auth, roles, usecases, users, and vector collection helpers.
 - `src/features/vector-collections/components/VectorCollectionPanel.jsx` uses the native vector collection API before sending content to n8n `/vector-webhook`.
+- `src/features/vector-collections/metadata.js` parses `cmetadata` defensively for Collection Files display labels and search.
 - `src/features/ai-chat/Page.jsx` and the chat store keep chat session state separate from Swagger CRUD.
 
 ## Product Decisions to Preserve

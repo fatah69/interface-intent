@@ -117,16 +117,6 @@ h3 { font-size: 17px; }
 .vector-read-panel div:first-child { display: grid; gap: 3px; }
 .vector-read-panel strong { color: #172033; }
 .vector-read-panel span { color: #64748b; font-size: 13px; }
-.collection-workspace-panel { gap: 12px; }
-.collection-workspace-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; }
-.collection-workspace-head > div { min-width: 0; display: grid; gap: 3px; }
-.collection-workspace-head strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.collection-workspace-head .secondary-button { min-height: 34px; padding: 0 10px; font-size: 12px; }
-.collection-workspace-meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.collection-workspace-meta div { min-width: 0; display: grid; gap: 3px; padding: 9px 10px; border: 1px solid #d9e2ec; border-radius: 8px; background: #fff; }
-.collection-workspace-meta span { overflow: hidden; color: #64748b; font-size: 11px; font-weight: 800; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
-.collection-workspace-meta strong { overflow: hidden; color: #172033; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
-.collection-workspace-note { margin: 0; color: #64748b; font-size: 13px; line-height: 1.45; }
 .vector-tabs { display: inline-flex; max-width: 100%; padding: 3px; border: 1px solid #d9e2ec; border-radius: 8px; background: #f8fafc; }
 .vector-tabs button { min-height: 32px; border: 0; border-radius: 6px; padding: 0 12px; background: transparent; color: #475569; font-size: 13px; font-weight: 800; }
 .vector-tabs button.active { background: #fff; color: #1d4ed8; box-shadow: 0 1px 3px rgba(15,23,42,.1); }
@@ -168,15 +158,10 @@ h3 { font-size: 17px; }
 .vector-status-step.done { border-color: #bbf7d0; background: #f0fdf4; color: #166534; }
 .vector-status-step.error { border-color: #fecaca; background: #fef2f2; color: #b91c1c; }
 .collection-files-panel { display: grid; }
-.collection-file-list { display: grid; gap: 8px; padding: 14px 16px; }
-.collection-file-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid #d9e2ec; border-radius: 8px; background: #fff; }
-.collection-file-row div { min-width: 0; display: grid; gap: 3px; }
-.collection-file-row strong, .collection-file-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.collection-file-row strong { color: #172033; font-size: 14px; }
-.collection-file-row span { color: #64748b; font-size: 13px; }
-.collection-file-row .secondary-button { min-height: 34px; padding: 0 10px; font-size: 12px; }
-.collection-file-empty { min-height: 170px; display: grid; place-items: center; align-content: center; gap: 6px; border: 1px dashed #d9e2ec; border-radius: 8px; background: #fbfdff; color: #475569; text-align: center; }
-.collection-file-empty span { color: #64748b; }
+.collection-files-table-wrap { border-top: 1px solid #e5edf5; }
+.resource-vector-collection-files .col-row-number, .resource-vector-collection-files .cell-row-number { width: 58px; color: #64748b; text-align: right; }
+.resource-vector-collection-files .cell-collection strong, .resource-vector-collection-files .cell-file { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.resource-vector-collection-files .secondary-button { min-height: 34px; padding: 0 10px; font-size: 12px; }
 .collection-file-metadata-list { display: grid; gap: 6px; margin: 0 0 14px; }
 .collection-file-metadata-list span { overflow: hidden; padding: 8px 10px; border: 1px solid #d9e2ec; border-radius: 8px; background: #f8fafc; color: #334155; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -342,10 +327,6 @@ input:focus, select:focus, textarea:focus { border-color: #2563eb; box-shadow: 0
   .vector-panel-header, .vector-actions-grid { grid-template-columns: 1fr; }
   .vector-action { min-height: auto; }
   .vector-action .primary-button, .vector-action .secondary-button { width: 100%; }
-  .collection-workspace-head, .collection-workspace-meta { grid-template-columns: 1fr; }
-  .collection-workspace-head .secondary-button { width: 100%; }
-  .collection-file-row { grid-template-columns: 1fr; }
-  .collection-file-row .secondary-button { width: 100%; }
   .vector-form-footer { flex-direction: column; align-items: stretch; }
   .vector-form-actions { display: grid; grid-template-columns: 1fr; }
   .vector-form-actions .primary-button, .vector-form-actions .secondary-button { width: 100%; }

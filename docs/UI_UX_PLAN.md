@@ -61,7 +61,7 @@ Do not add a separate Vectors CRUD page until the API exposes direct read endpoi
 - AI Chat sends only `chatInput`, `message`, and `sessionId`; collection routing is handled by n8n.
 - AI Chat state persists in `sessionStorage` for the browser session.
 - Vector Collections uses Semantic Search collection names, native `/api/vector-collections`, and n8n `/vector-webhook` indexing.
-- Native vector collection rows can be listed, created when needed, and used to upload/view the original file.
+- Native vector collection rows can be listed, created when needed, and used to upload, preview, or explicitly download the original file.
 - Vector Collections is organized around the selected collection: choose the target collection first, then view the saved knowledge file and upload Text/PDF for that collection.
 - Vector Collections is split into two sidebar children: Upload Knowledge for Text/PDF upload, and Collection Files for browsing/viewing saved knowledge files.
 - Clicking the Vector Collections parent opens Upload Knowledge by default, so the parent does not need its own empty landing page.
@@ -87,7 +87,7 @@ Partially backed in UI:
 - Utilities: list and create only.
 - Agent Utilities: create only.
 - Vector Collections Upload Knowledge: select target collection, create native row when needed, upload the original file, and send Text/PDF to n8n.
-- Vector Collections Collection Files: list saved Vector Collection files, open a detail drawer first, then open the original file only from an explicit `Open File` action.
+- Vector Collections Collection Files: list saved Vector Collection files, open a detail drawer first, then separate original file preview through `Open File` from explicit `Download`.
 
 Separate from Swagger CRUD:
 

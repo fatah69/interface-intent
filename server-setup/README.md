@@ -15,7 +15,7 @@ Aplikasi tetap frontend React. `server-setup/prod-server.mjs` hanya serve static
 - API target: `http://194.233.79.180:8080`
 - n8n target: `http://103.140.90.131:5678`
 - PM2 process name: `interface-intent`
-- Server project folder: `~/interface-intent/interface-intent`
+- Server project folder: `~/interface-intent/interface-intent-migrate`
 - Project Node version: `.nvmrc` -> Node `22`
 
 ## Prasyarat
@@ -37,7 +37,7 @@ source ~/.bashrc
 Di folder project:
 
 ```bash
-cd ~/interface-intent/interface-intent
+cd ~/interface-intent/interface-intent-migrate
 nvm install
 nvm use
 node -v
@@ -65,7 +65,7 @@ Di server:
 
 ```bash
 ssh litmas@172.16.210.244
-cd ~/interface-intent/interface-intent
+cd ~/interface-intent/interface-intent-migrate
 nvm use
 node -v
 git status
@@ -84,7 +84,7 @@ Kalau sudah yakin working tree server bersih:
 
 ```bash
 ssh litmas@172.16.210.244
-cd ~/interface-intent/interface-intent
+cd ~/interface-intent/interface-intent-migrate
 nvm use
 node -v
 git pull origin main
@@ -101,7 +101,7 @@ Keluar dari log dengan `Ctrl + C`.
 Jika PM2 process belum ada:
 
 ```bash
-cd ~/interface-intent/interface-intent
+cd ~/interface-intent/interface-intent-migrate
 nvm install
 nvm use
 node -v
@@ -115,7 +115,7 @@ pm2 save
 Jika PM2 pernah dibuat saat shell masih memakai Node 18 dan app bermasalah, buat ulang process setelah `nvm use`:
 
 ```bash
-cd ~/interface-intent/interface-intent
+cd ~/interface-intent/interface-intent-migrate
 nvm use
 node -v
 pm2 delete interface-intent
@@ -186,7 +186,8 @@ Login, lalu cek flow utama:
 - Intents list/load.
 - Usecases list/load.
 - Semantic Search list/load.
-- Vector Collections list native collections.
+- Vector Collections > Upload Knowledge untuk pilih collection dan upload Text/PDF.
+- Vector Collections > Collection Files untuk buka detail file collection, lalu Open File untuk preview atau Download bila memang perlu unduh.
 - AI Chat kirim pesan.
 
 Jangan smoke test `POST /vector-webhook` kecuali ada rencana cleanup, karena request itu menulis row ke PGVector.

@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, ChevronDown, ExternalLink, FileUp, Search, Send, X } from 'lucide-react';
+import { Check, ChevronDown, FileUp, Search, Send, X } from 'lucide-react';
 import { api } from '../../../api/client';
-import { vectorCollectionFileLabel } from '../metadata';
 
 const selectedCollectionStorageKey = 'intent-agent-vector-collection';
 const maxTextCharacters = 50000;
@@ -98,8 +97,6 @@ export function VectorCollectionPanel({ semanticCollections = [], vectorCollecti
   }, [collectionOptions, collectionQuery]);
   const activeMeta = modeMeta[activeMode];
   const hasCollections = collectionOptions.length > 0;
-  const selectedCollection = collectionName ? findApiCollection(collectionName) : null;
-  const selectedFileLabel = vectorCollectionFileLabel(selectedCollection);
 
   useEffect(() => {
     if (!hasCollections) {
@@ -223,41 +220,6 @@ export function VectorCollectionPanel({ semanticCollections = [], vectorCollecti
       setError(fileSaved
         ? `File tersimpan, tapi knowledge belum berhasil diproses: ${error.message || 'akses gagal'}.`
         : `File belum berhasil disimpan: ${error.message || 'akses gagal'}.`);
-    } finally {
-      setLoadingAction('');
-    }
-  }
-
-  async function viewVectorFile(item) {
-    if (!item?.uuid) {
-      setError('Identitas collection belum tersedia.');
-      return;
-    }
-
-    setLoadingAction(`view-${item.uuid}`);
-    setStatusType('neutral');
-    setUploadSteps([]);
-    setStatus('Membuka file collection...');
-    try {
-      const { blob, contentType, filename } = await api.vectorCollectionFile(item.uuid);
-      const fileBlob = blob.type ? blob : new Blob([blob], { type: contentType });
-      const objectUrl = URL.createObjectURL(fileBlob);
-      const opened = window.open(objectUrl, '_blank', 'noopener,noreferrer');
-
-      if (!opened) {
-        const link = document.createElement('a');
-        link.href = objectUrl;
-        link.download = filename || `${getCollectionName(item) || item.uuid}`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-      }
-
-      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
-      setStatusType('success');
-      setStatus(`File collection dibuka: ${getCollectionName(item) || item.uuid}.`);
-    } catch (error) {
-      setError(error.message || 'Gagal membuka file collection.');
     } finally {
       setLoadingAction('');
     }
@@ -418,43 +380,6 @@ export function VectorCollectionPanel({ semanticCollections = [], vectorCollecti
           </div>
         ) : (
           <>
-            <div className="vector-read-panel collection-workspace-panel">
-              <div className="collection-workspace-head">
-                <div>
-                  <strong>{collectionName || 'Collection belum dipilih'}</strong>
-                  <span>{selectedCollection ? 'Knowledge file tersedia untuk collection ini.' : 'Belum ada file tersimpan untuk collection ini.'}</span>
-                </div>
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={() => viewVectorFile(selectedCollection)}
-                  disabled={busy || !selectedCollection?.uuid}
-                >
-                  <ExternalLink size={15} />
-                  {loadingAction === `view-${selectedCollection?.uuid}` ? 'Opening...' : 'View File'}
-                </button>
-              </div>
-
-              <div className="collection-workspace-meta">
-                <div>
-                  <span>Status file</span>
-                  <strong>{selectedCollection ? 'Tersimpan' : 'Belum tersimpan'}</strong>
-                </div>
-                <div>
-                  <span>Nama file</span>
-                  <strong>{selectedFileLabel || (selectedCollection ? getCollectionName(selectedCollection) : '-')}</strong>
-                </div>
-                <div>
-                  <span>Total collection</span>
-                  <strong>{vectorCollections.length.toLocaleString('id-ID')}</strong>
-                </div>
-              </div>
-
-              {!selectedCollection && (
-                <p className="collection-workspace-note">Upload Text atau PDF untuk menyimpan knowledge ke collection yang dipilih.</p>
-              )}
-            </div>
-
             {activeMode === 'text' && (
               <form className="vector-form" onSubmit={submitText}>
                 <div className="vector-form-heading">

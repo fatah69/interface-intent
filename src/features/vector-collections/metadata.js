@@ -1,5 +1,6 @@
 const fileNameKeys = ['filename', 'file_name', 'original_name', 'originalName', 'title', 'name', 'fileName'];
 const pathKeys = ['path', 'file_path', 'filePath', 'filepath', 'directory', 'url'];
+const timeKeys = ['uploaded_at', 'uploadedAt', 'upload_time', 'uploadTime', 'updated_at', 'updatedAt', 'created_at', 'createdAt'];
 
 function parseJsonLike(value) {
   if (typeof value !== 'string') return value;
@@ -26,6 +27,30 @@ function firstValue(record, keys) {
   if (!record || typeof record !== 'object' || Array.isArray(record)) return '';
   for (const key of keys) {
     if (record[key]) return record[key];
+  }
+  return '';
+}
+
+function firstNestedValue(value, keys) {
+  const parsed = parseJsonLike(value);
+  if (!parsed) return '';
+  if (Array.isArray(parsed)) {
+    for (const entry of parsed) {
+      const result = firstNestedValue(entry, keys);
+      if (result) return result;
+    }
+    return '';
+  }
+  if (typeof parsed !== 'object') return '';
+
+  const direct = firstValue(parsed, keys);
+  if (direct) return direct;
+
+  for (const value of Object.values(parsed)) {
+    if (value && typeof value === 'object') {
+      const nested = firstNestedValue(value, keys);
+      if (nested) return nested;
+    }
   }
   return '';
 }
@@ -78,11 +103,16 @@ export function vectorCollectionFileLabel(item) {
   return vectorMetadataFiles(item)[0]?.label || '';
 }
 
+export function vectorCollectionTimeValue(item) {
+  return firstValue(item, timeKeys) || firstNestedValue(item?.cmetadata, timeKeys) || '';
+}
+
 export function vectorCollectionSearchText(item) {
   return [
     vectorCollectionName(item),
     item?.uuid,
     item?.cmetadata,
+    vectorCollectionTimeValue(item),
     ...vectorMetadataFiles(item).flatMap((entry) => [entry.label, entry.path, entry.type]),
   ].filter(Boolean).join(' ');
 }

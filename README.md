@@ -50,7 +50,7 @@ src/features/*/config.js                 Feature-specific resource config
 src/features/*/Page.jsx                  Feature page entry point
 src/features/auth/                       Login and auth store
 src/features/ai-chat/                    AI Chat webhook workflow
-src/features/vector-collections/         Vector collection upload workflow
+src/features/vector-collections/         Vector collection upload and file browsing workflows
 src/templates/hooks/useResourceCrud.js   Shared CRUD behavior
 src/templates/components/                Shared layout, form, modal, drawer, table, toolbar, sidebar pieces
 src/config/resources.js                  Feature registry, route map, and nav grouping
@@ -61,7 +61,7 @@ src/api/client.js                        REST endpoint map and request helper
 
 Each sidebar page is a feature. New CRUD features should get a folder under `src/features/`, define `Page.jsx` and `config.js`, then be registered through `src/config/resources.js` and `src/features/index.js`.
 
-Navigation uses `react-router-dom` with clean routes such as `/intents`, `/usecases`, `/actions`, `/semantic-search`, `/vector-collections`, `/users`, and `/chat`. The production server falls back to `index.html`, so direct refresh on those routes is supported.
+Navigation uses `react-router-dom` with clean routes such as `/intents`, `/usecases`, `/actions`, `/semantic-search`, `/vector-collections/upload`, `/vector-collections/files`, `/users`, and `/chat`. The production server falls back to `index.html`, so direct refresh on those routes is supported.
 
 ## Development
 
@@ -112,7 +112,7 @@ Then pull and deploy on the internal server. The server default Node can be v18,
 
 ```bash
 ssh litmas@172.16.210.244
-cd ~/interface-intent/interface-intent
+cd ~/interface-intent/interface-intent-migrate
 nvm use
 node -v
 git pull origin main
@@ -155,7 +155,7 @@ Auth uses `POST /api/auth/login`, stores the Bearer token, loads profile from `G
 - Agent Utilities: create mapping only.
 - Roles: admin-only list and create.
 - Users: admin-only list, detail, create, update, assign role, delete, and usecase assignment.
-- Vector Collections: list native collections, create native collection row when needed, upload/view original TXT/PDF file, and send content to n8n indexing.
+- Vector Collections: split into Upload Knowledge and Collection Files. Upload Knowledge selects a collection target, creates a native row when needed, uploads the original TXT/PDF file, and sends content to n8n indexing. Collection Files lists saved collection files in a paginated sortable table with upload time when the backend provides it, opens a detail drawer first, then separates original file preview through Open File from explicit Download.
 - AI Chat: sends real messages to n8n through `/chat-webhook`.
 
 ## Vector Collections Flow
@@ -163,11 +163,14 @@ Auth uses `POST /api/auth/login`, stores the Bearer token, loads profile from `G
 Semantic Search and native Vector Collections intentionally work together:
 
 1. Semantic Search stores the Action-facing `collection_name` registry.
-2. Vector Collections uses that name to find or create a native `/api/vector-collections` row.
+2. Upload Knowledge uses that name to find or create a native `/api/vector-collections` row.
 3. The app uploads the original TXT/PDF to `/api/vector-collections/{uuid}/upload`.
 4. The app posts the same content to `/vector-webhook` so n8n performs chunking/vector indexing.
+5. Collection Files lists saved native Vector Collection rows, opens a detail drawer before any original file is opened, and keeps Download as a separate explicit action.
 
 `semantic_search.collection_name` and `n8n_vector_collections.name` have no FK in the ERD. The UI keeps them aligned by using the same name.
+
+Vector Collection file labels are parsed defensively from `cmetadata`. The frontend tolerates plain path strings, JSON objects, and JSON arrays so future backend metadata formats can still be displayed as readable file labels.
 
 ## API Coverage
 
@@ -240,4 +243,3 @@ When the dev server is running, open the viewer from the Vite URL, for example:
 ```text
 http://172.16.210.244:5173/ERD_VIEW.html
 ```
-

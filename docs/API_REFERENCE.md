@@ -272,7 +272,7 @@ Native Swagger endpoint:
 | --- | --- | --- |
 | `GET` | `/api/vector-collections` | List vector collections |
 | `POST` | `/api/vector-collections` | Create native vector collection row |
-| `GET` | `/api/vector-collections/{uuid}` | View/download original uploaded file |
+| `GET` | `/api/vector-collections/{uuid}` | Stream original uploaded file |
 | `POST` | `/api/vector-collections/{uuid}/upload` | Upload original TXT/PDF file |
 
 Payload create native collection:
@@ -288,10 +288,13 @@ Payload create native collection:
 Current UI flow:
 
 1. User creates/selects `collection_name` from Semantic Search.
-2. Vector Collections page lists names from both Semantic Search and native `/api/vector-collections`.
+2. Upload Knowledge lists names from Semantic Search and native `/api/vector-collections`.
 3. If selected name has no native vector collection row, UI creates one with `/api/vector-collections`.
 4. UI uploads the original TXT/PDF to `/api/vector-collections/{uuid}/upload`.
 5. UI then sends the same content to n8n `/vector-webhook` so existing chunking/vector indexing still runs.
+6. Collection Files lists saved native vector collection rows in a paginated sortable table, displays upload time when a timestamp exists, opens a detail drawer first, then separates original file preview through Open File from explicit Download.
+
+`cmetadata` parsing is defensive in the frontend. Supported display formats include plain path strings, JSON objects, and JSON arrays. Swagger still exposes `GET /api/vector-collections/{uuid}` by UUID only, so per-file Open File behavior depends on how the backend maps that UUID to the saved original file.
 
 ERD note: `semantic_search.collection_name` and `n8n_vector_collections.name` are not connected by FK. UI keeps them aligned by name.
 

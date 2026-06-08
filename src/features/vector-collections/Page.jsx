@@ -1,24 +1,59 @@
 import { useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { ExternalLink, Search, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Boxes, ChevronLeft, ChevronRight, Download, ExternalLink, Search, X } from 'lucide-react';
 import { api } from '../../api/client';
 import { PageHeader, StatusStrip } from '../../templates/components/PageHeader';
 import { routeByModule } from '../../config/resources';
 import { VectorCollectionPanel } from './components/VectorCollectionPanel';
 import { vectorCollectionFilesPage, vectorKnowledgeUploadPage } from './config';
-import { vectorCollectionFileLabel, vectorCollectionName, vectorCollectionSearchText, vectorMetadataFiles } from './metadata';
+import { downloadFile, openFilePreview } from './fileActions';
+import { vectorCollectionFileLabel, vectorCollectionName, vectorCollectionSearchText, vectorCollectionTimeValue, vectorMetadataFiles } from './metadata';
 
-function openFilePreview({ blob, contentType }) {
-  const fileBlob = blob.type ? blob : new Blob([blob], { type: contentType });
-  const objectUrl = URL.createObjectURL(fileBlob);
-  const opened = window.open(objectUrl, '_blank', 'noopener,noreferrer');
+const timeFormatter = new Intl.DateTimeFormat('id-ID', {
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  timeZone: 'Asia/Jakarta',
+});
+const pageSizeOptions = [10, 25, 50];
 
-  if (!opened) {
-    URL.revokeObjectURL(objectUrl);
-    throw new Error('Tab baru tidak bisa dibuka. Izinkan pop-up browser lalu coba lagi.');
-  }
+function pageWindow(currentPage, totalPages) {
+  const windowSize = 5;
+  const halfWindow = Math.floor(windowSize / 2);
+  const start = Math.max(1, Math.min(currentPage - halfWindow, totalPages - windowSize + 1));
+  const end = Math.min(totalPages, start + windowSize - 1);
 
-  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+  return Array.from({ length: end - start + 1 }, (_, index) => start + index);
+}
+
+function SortIcon({ active, direction }) {
+  if (!active) return <ArrowUpDown size={13} />;
+  return direction === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />;
+}
+
+function sortableDateValue(item) {
+  const value = vectorCollectionTimeValue(item);
+  if (!value) return 0;
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function formatCollectionTime(item) {
+  const value = vectorCollectionTimeValue(item);
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return timeFormatter.format(date);
+}
+
+function compareValues(left, right) {
+  if (left == null && right == null) return 0;
+  if (left == null) return 1;
+  if (right == null) return -1;
+  if (typeof left === 'number' && typeof right === 'number') return left - right;
+  return String(left).localeCompare(String(right), undefined, { numeric: true, sensitivity: 'base' });
 }
 
 export function VectorCollectionsPage() {
@@ -49,8 +84,11 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('');
   const [statusType, setStatusType] = useState('neutral');
-  const [loadingUuid, setLoadingUuid] = useState('');
+  const [fileAction, setFileAction] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
+  const [sort, setSort] = useState({ column: 'uploaded_at', direction: 'desc' });
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const statusWarning = apiStatus.includes('gagal') || apiStatus.includes('belum');
   const vectorCollections = data.vectorCollections || [];
 
@@ -62,9 +100,68 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
       .includes(needle));
   }, [query, vectorCollections]);
 
+  const sortedCollections = useMemo(() => {
+    return [...filteredCollections].sort((left, right) => {
+      const valueByColumn = {
+        collection: [vectorCollectionName(left), vectorCollectionName(right)],
+        file: [vectorCollectionFileLabel(left) || vectorCollectionName(left), vectorCollectionFileLabel(right) || vectorCollectionName(right)],
+        uploaded_at: [sortableDateValue(left), sortableDateValue(right)],
+      };
+      const [leftValue, rightValue] = valueByColumn[sort.column] || valueByColumn.collection;
+      const result = compareValues(leftValue, rightValue);
+      return sort.direction === 'asc' ? result : -result;
+    });
+  }, [filteredCollections, sort]);
+  const totalPages = Math.max(1, Math.ceil(sortedCollections.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const startIndex = sortedCollections.length ? (currentPage - 1) * pageSize : 0;
+  const endIndex = Math.min(startIndex + pageSize, sortedCollections.length);
+  const paginatedCollections = useMemo(() => sortedCollections.slice(startIndex, endIndex), [endIndex, sortedCollections, startIndex]);
+  const paginationPages = pageWindow(currentPage, totalPages);
+  const canPrevious = currentPage > 1;
+  const canNext = currentPage < totalPages;
+
+  function updateQuery(value) {
+    setQuery(value);
+    setPage(1);
+  }
+
+  function updatePageSize(value) {
+    setPageSize(Number(value));
+    setPage(1);
+  }
+
+  function goToPage(nextPage) {
+    setPage(Math.min(Math.max(nextPage, 1), totalPages));
+  }
+
+  function updateSort(column) {
+    setSort((current) => ({
+      column,
+      direction: current.column === column && current.direction === 'asc' ? 'desc' : 'asc',
+    }));
+    setPage(1);
+  }
+
+  function SortHeader({ column, label }) {
+    const active = sort.column === column;
+    return (
+      <button
+        className={active ? 'sort-header active' : 'sort-header'}
+        type="button"
+        onClick={() => updateSort(column)}
+        aria-sort={active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+        title={`Sort by ${label}`}
+      >
+        <span>{label}</span>
+        <SortIcon active={active} direction={sort.direction} />
+      </button>
+    );
+  }
+
   async function viewFile(item) {
     if (!item?.uuid) return;
-    setLoadingUuid(item.uuid);
+    setFileAction(`view-${item.uuid}`);
     setStatusType('neutral');
     setStatus('Membuka file di tab baru...');
 
@@ -77,7 +174,26 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
       setStatusType('error');
       setStatus(error.message || 'Gagal membuka file collection.');
     } finally {
-      setLoadingUuid('');
+      setFileAction('');
+    }
+  }
+
+  async function downloadSelectedFile(item) {
+    if (!item?.uuid) return;
+    setFileAction(`download-${item.uuid}`);
+    setStatusType('neutral');
+    setStatus('Menyiapkan download file...');
+
+    try {
+      const file = await api.vectorCollectionFile(item.uuid);
+      downloadFile({ ...file, fallbackName: vectorCollectionFileLabel(item) || vectorCollectionName(item) || item.uuid });
+      setStatusType('success');
+      setStatus(`File didownload: ${vectorCollectionName(item)}.`);
+    } catch (error) {
+      setStatusType('error');
+      setStatus(error.message || 'Gagal download file collection.');
+    } finally {
+      setFileAction('');
     }
   }
 
@@ -95,33 +211,84 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
         <div className="panel-toolbar">
           <div className="search-box">
             <Search size={17} />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari collection atau file" />
+            <input value={query} onChange={(event) => updateQuery(event.target.value)} placeholder="Cari collection atau file" />
           </div>
         </div>
 
-        <div className="collection-file-list">
-          {!filteredCollections.length ? (
-            <div className="collection-file-empty">
-              <strong>Belum ada file knowledge tersimpan.</strong>
-              <span>Upload Text atau PDF dari menu Upload Knowledge untuk membuat file collection.</span>
-            </div>
-          ) : filteredCollections.map((item) => {
-            const name = vectorCollectionName(item);
-            const files = vectorMetadataFiles(item);
-            const fileLabel = vectorCollectionFileLabel(item);
-            return (
-              <div className="collection-file-row" key={item.uuid || name}>
-                <div>
-                  <strong title={name}>{name}</strong>
-                  <span title={files.map((entry) => entry.label).join(', ') || name}>{files.length > 1 ? `${files.length} file tersimpan` : fileLabel || 'File collection tersimpan'}</span>
-                </div>
-                <button className="secondary-button" type="button" onClick={() => setSelectedFile(item)} disabled={loading || !item.uuid}>Detail</button>
-              </div>
-            );
-          })}
+        <div className="table-wrap collection-files-table-wrap">
+          <table className="resource-table resource-vector-collection-files">
+            <thead>
+              <tr>
+                <th className="col-row-number">No</th>
+                <th className="col-file"><SortHeader column="file" label="File" /></th>
+                <th className="col-uploaded_at"><SortHeader column="uploaded_at" label="Uploaded" /></th>
+                <th className="col-collection"><SortHeader column="collection" label="Collection" /></th>
+                <th className="actions-col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedCollections.map((item, index) => {
+                const name = vectorCollectionName(item);
+                const files = vectorMetadataFiles(item);
+                const fileLabel = vectorCollectionFileLabel(item);
+                return (
+                  <tr key={item.uuid || name} className="clickable-row" onClick={() => setSelectedFile(item)}>
+                    <td className="cell-row-number">{startIndex + index + 1}</td>
+                    <td className="cell-file" title={files.map((entry) => entry.label).join(', ') || name}>{files.length > 1 ? `${files.length} file tersimpan` : fileLabel || 'File collection tersimpan'}</td>
+                    <td className="cell-uploaded_at">{formatCollectionTime(item)}</td>
+                    <td className="cell-collection"><strong title={name}>{name}</strong></td>
+                    <td className="row-actions" onClick={(event) => event.stopPropagation()}>
+                      <button className="secondary-button" type="button" onClick={() => setSelectedFile(item)} disabled={loading || !item.uuid}>Detail</button>
+                    </td>
+                  </tr>
+                );
+              })}
+              {!sortedCollections.length && (
+                <tr>
+                  <td colSpan="5" className="empty-state">
+                    <Boxes size={28} />
+                    {vectorCollections.length ? 'Tidak ada data untuk filter ini.' : 'Belum ada file knowledge tersimpan.'}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
 
-        <div className={`vector-status ${statusType}`}>{status || `${filteredCollections.length} file collection ditampilkan.`}</div>
+        <div className="table-pagination">
+          <div className="pagination-meta">
+            <label className="rows-per-page">
+              <span>Rows per page</span>
+              <select value={pageSize} onChange={(event) => updatePageSize(event.target.value)}>
+                {pageSizeOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+              </select>
+            </label>
+            <span>Showing {sortedCollections.length ? startIndex + 1 : 0} to {endIndex} of {sortedCollections.length} records</span>
+          </div>
+          <div className="pagination-controls">
+            <button className="pagination-button" type="button" onClick={() => goToPage(1)} disabled={!canPrevious}>First</button>
+            <button className="pagination-button icon" type="button" onClick={() => goToPage(currentPage - 1)} disabled={!canPrevious} title="Previous page">
+              <ChevronLeft size={16} />
+            </button>
+            {paginationPages.map((pageNumber) => (
+              <button
+                key={pageNumber}
+                className={pageNumber === currentPage ? 'pagination-button active' : 'pagination-button'}
+                type="button"
+                onClick={() => goToPage(pageNumber)}
+                aria-current={pageNumber === currentPage ? 'page' : undefined}
+              >
+                {pageNumber}
+              </button>
+            ))}
+            <button className="pagination-button icon" type="button" onClick={() => goToPage(currentPage + 1)} disabled={!canNext} title="Next page">
+              <ChevronRight size={16} />
+            </button>
+            <button className="pagination-button" type="button" onClick={() => goToPage(totalPages)} disabled={!canNext}>Last</button>
+          </div>
+        </div>
+
+        <div className={`vector-status ${statusType}`}>{status || `${sortedCollections.length} file collection ditampilkan.`}</div>
       </section>
 
       {selectedFile && (
@@ -139,6 +306,8 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
               <div><dt>Status file</dt><dd>{selectedFile.uuid ? 'Tersimpan' : 'Belum tersimpan'}</dd></div>
               <div><dt>Nama file</dt><dd>{vectorCollectionFileLabel(selectedFile) || 'File collection tersimpan'}</dd></div>
               <div><dt>Collection</dt><dd>{vectorCollectionName(selectedFile)}</dd></div>
+              <div><dt>Uploaded</dt><dd>{formatCollectionTime(selectedFile)}</dd></div>
+              <div><dt>UUID</dt><dd>{selectedFile.uuid || '-'}</dd></div>
             </dl>
 
             {vectorMetadataFiles(selectedFile).length > 1 && (
@@ -156,9 +325,13 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
 
             <div className="drawer-actions">
               <button type="button" className="secondary-button" onClick={() => setSelectedFile(null)}>Tutup</button>
-              <button type="button" className="primary-button" onClick={() => viewFile(selectedFile)} disabled={loadingUuid === selectedFile.uuid || !selectedFile.uuid}>
+              <button type="button" className="secondary-button" onClick={() => downloadSelectedFile(selectedFile)} disabled={Boolean(fileAction) || !selectedFile.uuid}>
+                <Download size={16} />
+                {fileAction === `download-${selectedFile.uuid}` ? 'Downloading...' : 'Download'}
+              </button>
+              <button type="button" className="primary-button" onClick={() => viewFile(selectedFile)} disabled={Boolean(fileAction) || !selectedFile.uuid}>
                 <ExternalLink size={16} />
-                {loadingUuid === selectedFile.uuid ? 'Opening...' : 'Open File'}
+                {fileAction === `view-${selectedFile.uuid}` ? 'Opening...' : 'Open File'}
               </button>
             </div>
           </section>
