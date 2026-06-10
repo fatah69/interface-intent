@@ -1,6 +1,6 @@
 import { RefreshCw } from 'lucide-react';
 
-export function PageHeader({ config, eyebrow = 'Intent & Agent Management', countLabel, onRefresh, refreshTitle = 'Refresh data' }) {
+export function PageHeader({ config, eyebrow = 'Intent & Agent Management', countLabel, onRefresh, refreshTitle = 'Refresh data', actions }) {
   return (
     <header className="topbar">
       <div>
@@ -8,9 +8,12 @@ export function PageHeader({ config, eyebrow = 'Intent & Agent Management', coun
         <h1>{config.title}</h1>
         <p>{config.description} <span className="record-count">{countLabel}</span></p>
       </div>
-      <button className="icon-button" onClick={onRefresh} title={refreshTitle}>
-        <RefreshCw size={18} />
-      </button>
+      <div className="topbar-actions">
+        {actions}
+        <button className="icon-button" onClick={onRefresh} title={refreshTitle}>
+          <RefreshCw size={18} />
+        </button>
+      </div>
     </header>
   );
 }
