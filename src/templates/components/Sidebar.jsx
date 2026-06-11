@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Braces, ChevronDown, ChevronRight, LogOut } from 'lucide-react';
 import { api } from '../../api/client';
 import { moduleByRoute, modules, navGroups, routeByModule } from '../../config/resources';
+import { canAccessModule } from '../../features/auth/access';
 
 function normalizePath(pathname) {
   if (pathname.length > 1 && pathname.endsWith('/')) return pathname.slice(0, -1);
@@ -11,8 +12,7 @@ function normalizePath(pathname) {
 
 function canSeeItem(item, user) {
   const config = modules[item.key];
-  if (config?.adminOnly && user?.role?.name !== 'admin') return false;
-  return true;
+  return canAccessModule(user, config);
 }
 
 function NavButton({ item, active, data, user, navigate, openBranches, onToggleBranch, nested = false }) {

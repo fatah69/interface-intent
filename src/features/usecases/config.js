@@ -5,6 +5,7 @@ export const usecasePage = {
   singular: 'Usecase',
   icon: FolderKanban,
   description: 'Kelola scope usecase untuk intent dan akses user.',
+  adminOnly: true,
   fields: [
     { key: 'name', label: 'Name', type: 'text', required: true },
     { key: 'description', label: 'Description', type: 'textarea' },

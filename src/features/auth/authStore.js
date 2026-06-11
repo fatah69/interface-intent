@@ -23,12 +23,14 @@ export const useAuthStore = create(
         try {
           const payload = await api.login({ username, password });
           if (!payload?.token) throw new Error('Response login tidak berisi token.');
-          set({ token: payload.token, user: userFromLogin(payload), loading: true, initialized: true, error: '' });
-          const profile = await api.me().then(normalizeRecord).catch(() => null);
-          set({ user: profile || userFromLogin(payload), loading: false, initialized: true, error: '' });
-          return payload;
+          set({ token: payload.token, user: null, loading: true, initialized: true, error: '' });
+          const fallbackUser = userFromLogin(payload);
+          const profile = await api.me().then(normalizeRecord).catch(() => fallbackUser);
+          const user = profile || fallbackUser;
+          set({ user, loading: false, initialized: true, error: '' });
+          return { ...payload, user };
         } catch (error) {
-          set({ loading: false, error: error.message || 'Login gagal.' });
+          set({ token: '', user: null, loading: false, error: error.message || 'Login gagal.' });
           throw error;
         }
       },

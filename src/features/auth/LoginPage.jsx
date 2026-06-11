@@ -1,8 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Braces, LockKeyhole, LogIn, ShieldCheck, UserRound } from 'lucide-react';
+import { getPostLoginRoute } from './access';
 import { useAuthStore } from './authStore';
 
 export function LoginPage() {
+  const navigate = useNavigate();
   const { error, loading, login } = useAuthStore();
   const [form, setForm] = useState({ username: '', password: '' });
   const [localError, setLocalError] = useState('');
@@ -17,7 +20,8 @@ export function LoginPage() {
     }
 
     setLocalError('');
-    await login({ username, password }).catch(() => {});
+    const payload = await login({ username, password }).catch(() => null);
+    if (payload?.user) navigate(getPostLoginRoute(payload.user), { replace: true });
   }
 
   function updateField(key, value) {
