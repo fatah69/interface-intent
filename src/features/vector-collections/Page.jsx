@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { ArrowDown, ArrowUp, ArrowUpDown, Boxes, ChevronLeft, ChevronRight, Download, ExternalLink, Search, Trash2, X } from 'lucide-react';
 import { api } from '../../api/client';
+import { ConfirmationModal } from '../../templates/components/ConfirmationModal';
 import { PageHeader, StatusStrip } from '../../templates/components/PageHeader';
 import { routeByModule } from '../../config/resources';
 import { VectorCollectionPanel } from './components/VectorCollectionPanel';
@@ -139,6 +140,7 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
   const [statusType, setStatusType] = useState('neutral');
   const [fileAction, setFileAction] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState(null);
   const [sort, setSort] = useState({ column: 'collection', direction: 'asc' });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -298,11 +300,24 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
     }
   }
 
-  async function deleteSelectedCollection(item) {
+  function deleteSelectedCollection(item) {
     if (!item?.uuid) return;
     const name = vectorCollectionName(item);
-    const confirmed = window.confirm(`Hapus knowledge collection ${name}? Semantic Search registry tetap ada, tapi file/vector collection native akan dihapus.`);
-    if (!confirmed) return;
+    setDeleteConfirmation({
+      row: item,
+      title: 'Delete Collection Knowledge',
+      message: `Hapus knowledge collection "${name}"? File/vector collection native akan dihapus. Semantic Search registry tetap tersedia kalau collection ini terdaftar di Semantic Search.`,
+      confirmLabel: 'Delete',
+      busy: false,
+    });
+  }
+
+  async function confirmDeleteSelectedCollection() {
+    const item = deleteConfirmation?.row;
+    if (!item?.uuid) return;
+    const name = vectorCollectionName(item);
+
+    setDeleteConfirmation((current) => ({ ...current, busy: true }));
 
     setFileAction(`delete-${item.uuid}`);
     setStatusType('neutral');
@@ -320,6 +335,7 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
       setStatus(error.message || 'Gagal menghapus knowledge collection.');
     } finally {
       setFileAction('');
+      setDeleteConfirmation(null);
     }
   }
 
@@ -503,6 +519,12 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
           );
         })()
       )}
+
+      <ConfirmationModal
+        confirmation={deleteConfirmation}
+        onCancel={() => setDeleteConfirmation(null)}
+        onConfirm={confirmDeleteSelectedCollection}
+      />
     </div>
   );
 }
