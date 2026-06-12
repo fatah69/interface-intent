@@ -100,6 +100,34 @@ func TestPostKnowledgeRejectsPDFOverConfiguredRequestLimit(t *testing.T) {
 	}
 }
 
+func TestIsPDFUploadAcceptsPDFMimeOrFilename(t *testing.T) {
+	tests := []struct {
+		name        string
+		filename    string
+		contentType string
+		want        bool
+	}{
+		{name: "pdf mime", filename: "document.bin", contentType: "application/pdf", want: true},
+		{name: "pdf extension with octet stream", filename: "document.pdf", contentType: "application/octet-stream", want: true},
+		{name: "pdf extension with empty mime", filename: "DOCUMENT.PDF", contentType: "", want: true},
+		{name: "non pdf", filename: "document.txt", contentType: "text/plain", want: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			header := make(textproto.MIMEHeader)
+			if tt.contentType != "" {
+				header.Set("Content-Type", tt.contentType)
+			}
+			fileHeader := &multipart.FileHeader{Filename: tt.filename, Header: header}
+
+			if got := isPDFUpload(fileHeader); got != tt.want {
+				t.Fatalf("isPDFUpload() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func testConfig() *config.Config {
 	return &config.Config{
 		TextMaxLength:   5,

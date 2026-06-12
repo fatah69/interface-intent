@@ -7,6 +7,7 @@ import { routeByModule } from '../../config/resources';
 import { VectorCollectionPanel } from './components/VectorCollectionPanel';
 import { vectorCollectionFilesPage, vectorKnowledgeUploadPage } from './config';
 import { downloadFile, openFilePreview } from './fileActions';
+import { getVectorIndexFailure } from './indexStatus';
 import { vectorCollectionFileLabel, vectorCollectionName, vectorCollectionSearchText, vectorCollectionTimeValue, vectorMetadataFiles } from './metadata';
 
 const timeFormatter = new Intl.DateTimeFormat('id-ID', {
@@ -241,11 +242,15 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
                 const name = vectorCollectionName(item);
                 const files = vectorMetadataFiles(item);
                 const fileLabel = vectorCollectionFileLabel(item);
+                const indexFailure = getVectorIndexFailure(name);
                 return (
                   <tr key={item.uuid || name} className="clickable-row" onClick={() => setSelectedFile(item)}>
                     <td className="cell-row-number">{startIndex + index + 1}</td>
                     <td className="cell-collection"><strong title={name}>{name}</strong></td>
-                    <td className="cell-file" title={files.map((entry) => entry.label).join(', ') || 'Upload ulang untuk menyimpan file asli'}>{files.length > 1 ? `${files.length} file tersimpan` : fileLabel || 'File asli belum tersimpan'}</td>
+                    <td className="cell-file" title={files.map((entry) => entry.label).join(', ') || 'Upload ulang untuk menyimpan file asli'}>
+                      <span>{files.length > 1 ? `${files.length} file tersimpan` : fileLabel || 'File asli belum tersimpan'}</span>
+                      {indexFailure && <small className="index-warning">Indexing gagal</small>}
+                    </td>
                     <td className="cell-uploaded_at">{formatCollectionTime(item)}</td>
                     <td className="row-actions" onClick={(event) => event.stopPropagation()}>
                       <button className="secondary-button" type="button" onClick={() => setSelectedFile(item)} disabled={loading || !item.uuid}>Detail</button>
@@ -305,6 +310,7 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
         (() => {
           const selectedFiles = vectorMetadataFiles(selectedFile);
           const hasOriginalFile = selectedFiles.length > 0;
+          const indexFailure = getVectorIndexFailure(vectorCollectionName(selectedFile));
           return (
         <aside className="drawer-backdrop">
           <section className="detail-drawer collection-file-drawer">
@@ -336,6 +342,12 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
               <ExternalLink size={16} />
               <span>{hasOriginalFile ? 'File asli hanya dibuka setelah tombol Open File ditekan.' : 'File asli belum tersedia. Upload ulang knowledge ke collection ini untuk menyimpan file TXT/PDF yang bisa dibuka atau didownload.'}</span>
             </div>
+
+            {indexFailure && (
+              <div className="hint-box collection-file-hint warning">
+                <span>{indexFailure.message || 'Indexing terakhir gagal. Upload ulang supaya search sinkron dengan file terbaru.'}</span>
+              </div>
+            )}
 
             <div className="drawer-actions">
               <button type="button" className="secondary-button" onClick={() => setSelectedFile(null)}>Tutup</button>

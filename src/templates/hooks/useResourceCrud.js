@@ -206,7 +206,7 @@ export function useResourceCrud({ resource, data, loadData, setApiStatus }) {
 
   async function saveForm(event) {
     event.preventDefault();
-    const nextErrors = validateRecord(resource, form, modal.mode);
+    const nextErrors = validateRecord(resource, form, modal.mode, { rows, currentId: modal.id });
     if (nextErrors.length) {
       setErrors(nextErrors);
       return;

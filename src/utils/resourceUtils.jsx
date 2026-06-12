@@ -147,6 +147,10 @@ export function normalizeFormRecord(resource, record) {
 export function preparePayload(resource, record, mode = 'create') {
   const payload = { ...record };
 
+  if (resource === 'semanticSearches') {
+    payload.collection_name = String(payload.collection_name || '').trim();
+  }
+
   if (resource === 'actions') {
     const activeTarget = actionTypeTarget[payload.action_type];
     actionTargetFields.forEach((field) => {
@@ -176,7 +180,11 @@ export function preparePayload(resource, record, mode = 'create') {
   return payload;
 }
 
-export function validateRecord(resource, record, mode = 'create') {
+function normalizeCollectionName(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+export function validateRecord(resource, record, mode = 'create', context = {}) {
   const errors = [];
   const config = modules[resource];
 
@@ -201,6 +209,15 @@ export function validateRecord(resource, record, mode = 'create') {
     const activeTarget = actionTypeTarget[record.action_type];
     if (!activeTarget) errors.push('Action Type wajib dipilih.');
     if (activeTarget && !String(record[activeTarget] || '').trim()) errors.push('Target action wajib dipilih.');
+  }
+
+  if (resource === 'semanticSearches') {
+    const collectionName = normalizeCollectionName(record.collection_name);
+    const duplicate = (context.rows || []).find((row) => (
+      normalizeCollectionName(row.collection_name) === collectionName
+      && String(row.id) !== String(context.currentId ?? record.id ?? '')
+    ));
+    if (collectionName && duplicate) errors.push('Collection name sudah dipakai. Gunakan nama lain.');
   }
 
   return errors;

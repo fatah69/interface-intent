@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, ChevronDown, FileUp, Search, Send, X } from 'lucide-react';
 import { api } from '../../../api/client';
+import { clearVectorIndexFailure, setVectorIndexFailure } from '../indexStatus';
 
 const selectedCollectionStorageKey = 'intent-agent-vector-collection';
 const textDraftStorageKey = 'intent-agent-vector-text-draft';
@@ -225,10 +226,14 @@ export function VectorCollectionPanel({ semanticCollections = [], vectorCollecti
       setStatus('File tersimpan. Knowledge sedang diproses...');
 
       const result = await indexKnowledge();
+      clearVectorIndexFailure(collectionName);
       setUploadStepState('done', 'done');
       setStatusType('success');
       setStatus(result || `Knowledge siap dipakai di ${collectionName}.`);
     } catch (error) {
+      if (fileSaved) {
+        setVectorIndexFailure(collectionName, error.message || 'Indexing knowledge gagal setelah file tersimpan.');
+      }
       setUploadStepState(fileSaved ? 'done' : 'error', fileSaved ? 'error' : 'waiting');
       setError(fileSaved
         ? `File tersimpan, tapi knowledge belum berhasil diproses: ${error.message || 'akses gagal'}.`

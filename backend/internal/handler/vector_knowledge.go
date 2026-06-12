@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"strconv"
 	"strings"
@@ -35,6 +36,16 @@ type errorResponse struct {
 type successResponse struct {
 	ErrorCode int    `json:"error_code"`
 	Message   string `json:"message"`
+}
+
+func isPDFUpload(fileHeader *multipart.FileHeader) bool {
+	if fileHeader == nil {
+		return false
+	}
+
+	contentType := strings.ToLower(strings.TrimSpace(fileHeader.Header.Get("Content-Type")))
+	fileName := strings.ToLower(strings.TrimSpace(fileHeader.Filename))
+	return contentType == "application/pdf" || strings.HasSuffix(fileName, ".pdf")
 }
 
 // PostKnowledge handles POST /api/vector-knowledge
@@ -146,7 +157,7 @@ func (h *VectorKnowledgeHandler) handlePDFUpload(c *gin.Context) {
 	}
 
 	// Validate MIME type (replaces n8n Satpam Jenis File)
-	if fileHeader.Header.Get("Content-Type") != "application/pdf" {
+	if !isPDFUpload(fileHeader) {
 		c.JSON(http.StatusBadRequest, errorResponse{
 			ErrorCode: 400,
 			Message:   "File ditolak! Dokumen wajib berformat PDF.",

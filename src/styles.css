@@ -165,9 +165,12 @@ h3 { font-size: 17px; }
 .collection-files-table-wrap { border-top: 1px solid #e5edf5; }
 .resource-vector-collection-files .col-row-number, .resource-vector-collection-files .cell-row-number { width: 58px; color: #64748b; text-align: right; }
 .resource-vector-collection-files .cell-collection strong, .resource-vector-collection-files .cell-file { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.resource-vector-collection-files .cell-file span { overflow: hidden; display: inline-block; max-width: min(420px, 70%); text-overflow: ellipsis; vertical-align: middle; white-space: nowrap; }
+.index-warning { display: inline-flex; align-items: center; min-height: 22px; margin-left: 8px; padding: 1px 7px; border: 1px solid #fed7aa; border-radius: 999px; background: #fff7ed; color: #c2410c; font-size: 11px; font-weight: 800; vertical-align: middle; }
 .resource-vector-collection-files .secondary-button { min-height: 34px; padding: 0 10px; font-size: 12px; }
 .collection-file-metadata-list { display: grid; gap: 6px; margin: 0 0 14px; }
 .collection-file-metadata-list span { overflow: hidden; padding: 8px 10px; border: 1px solid #d9e2ec; border-radius: 8px; background: #f8fafc; color: #334155; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.collection-file-hint.warning { border-color: #fed7aa; background: #fff7ed; color: #9a3412; }
 
 .chat-panel { overflow: hidden; border: 1px solid #d9e2ec; border-radius: 8px; background: #fff; box-shadow: 0 18px 40px rgba(15,23,42,.06); }
 .chat-layout { display: grid; grid-template-rows: auto minmax(360px, 58vh) auto; min-height: 620px; }
