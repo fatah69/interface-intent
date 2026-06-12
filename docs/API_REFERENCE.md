@@ -272,7 +272,9 @@ Native Swagger endpoint:
 | --- | --- | --- |
 | `GET` | `/api/vector-collections` | List vector collections |
 | `POST` | `/api/vector-collections` | Create native vector collection row |
-| `GET` | `/api/vector-collections/{uuid}` | Stream original uploaded file |
+| `GET` | `/api/vector-collections/{uuid}` | Detail vector collection row |
+| `DELETE` | `/api/vector-collections/{uuid}` | Delete native vector collection and related file |
+| `GET` | `/api/vector-collections/{uuid}/download` | Stream original uploaded file |
 | `POST` | `/api/vector-collections/{uuid}/upload` | Upload original TXT/PDF file |
 
 Payload create native collection:
@@ -292,9 +294,9 @@ Current UI flow:
 3. If selected name has no native vector collection row, UI creates one with `/api/vector-collections`.
 4. UI uploads the original TXT/PDF to `/api/vector-collections/{uuid}/upload`.
 5. UI then sends the same content to Go backend `/vector-webhook` so chunking/vector indexing runs without n8n. Uploading to an existing `collection_name` replaces the old vector rows in `n8n_vectors` before inserting the latest chunks.
-6. Collection Knowledge lists saved native vector collection rows as one active knowledge entry per collection, displays upload time when a timestamp exists, opens a detail drawer first, then separates original file preview through Open File from explicit Download.
+6. Collection Knowledge lists saved native vector collection rows as one active knowledge entry per collection, displays upload time when a timestamp exists, opens a detail drawer first, separates original file preview through Open File from explicit Download, and can delete the native vector collection/file row.
 
-`cmetadata` parsing is defensive in the frontend. Supported display formats include plain path strings, JSON objects, and JSON arrays. Swagger still exposes `GET /api/vector-collections/{uuid}` by UUID only, so per-file Open File behavior depends on how the backend maps that UUID to the saved original file.
+`cmetadata` parsing is defensive in the frontend. Supported display formats include plain path strings, JSON objects, and JSON arrays. File preview/download uses `GET /api/vector-collections/{uuid}/download`.
 
 ERD note: `semantic_search.collection_name` and `n8n_vector_collections.name` are not connected by FK. UI keeps them aligned by name.
 

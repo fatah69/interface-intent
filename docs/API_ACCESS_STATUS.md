@@ -52,6 +52,8 @@ Endpoint berikut muncul di Swagger JSON aktif dan sudah dipetakan ke frontend bi
 | `GET`, `POST` | `/api/utilities/` |
 | `GET`, `POST` | `/api/vector-collections` |
 | `GET` | `/api/vector-collections/{uuid}` |
+| `DELETE` | `/api/vector-collections/{uuid}` |
+| `GET` | `/api/vector-collections/{uuid}/download` |
 | `POST` | `/api/vector-collections/{uuid}/upload` |
 
 ## Frontend Endpoint Map
@@ -72,7 +74,7 @@ Endpoint berikut muncul di Swagger JSON aktif dan sudah dipetakan ke frontend bi
 | Semantic Search | `/api/semantic-searches/` | List, detail, create, update, delete |
 | Utilities | `/api/utilities` | List and create |
 | Agent Utilities | `/api/ai-agent-utilities/` | Create only |
-| Vector Collections | `/api/vector-collections` | List saved collection rows, create row, upload original file, stream original file by UUID |
+| Vector Collections | `/api/vector-collections` | List saved collection rows, create row, detail row by UUID, upload original file, download original file by UUID, delete native collection/file by UUID |
 
 Runtime slash behavior has previously differed from Swagger for `roles`, `usecases`, `users`, `utilities`, and `vector-collections`. Keep `src/api/client.js` on the known working paths unless a new live probe proves a change is safe.
 
@@ -95,7 +97,7 @@ These operations are still not available as complete CRUD in Swagger/API and sho
 - Detail, update, and delete endpoints for Utilities.
 - Direct CRUD for `n8n_vectors`.
 
-Vector collection read/list/file upload is available through `/api/vector-collections`. Collection Knowledge shows one active knowledge entry per collection in a paginated sortable table, displays upload time when the backend provides a timestamp, opens a frontend detail drawer before the original file is opened, and separates preview from explicit download. Vector chunk rows remain managed by the Go backend and PGVector rather than a frontend CRUD page.
+Vector collection read/list/file upload/download/delete is available through `/api/vector-collections`. Collection Knowledge shows one active knowledge entry per collection in a paginated sortable table, displays upload time when the backend provides a timestamp, opens a frontend detail drawer before the original file is opened, separates preview from explicit download, and can delete the native vector collection/file row. Vector chunk rows remain managed by the Go backend and PGVector rather than a frontend CRUD page.
 
 ## Frontend Behavior Notes
 

@@ -11,7 +11,7 @@ export const endpoints = {
   semanticSearches: { path: '/api/semantic-searches/', read: true, detail: true, create: true, update: true, remove: true },
   utilities: { path: '/api/utilities', read: true, detail: false, create: true, update: false, remove: false },
   mappings: { path: '/api/ai-agent-utilities/', read: false, detail: false, create: true, update: false, remove: false },
-  vectorCollections: { path: '/api/vector-collections', read: true, detail: true, create: true, update: false, remove: false },
+  vectorCollections: { path: '/api/vector-collections', read: true, detail: true, create: true, update: false, remove: true },
   roles: { path: '/api/roles/', read: true, detail: false, create: true, update: false, remove: false },
   usecases: { path: '/api/usecases/', read: true, detail: true, create: true, update: true, remove: true },
   users: { path: '/api/users/', read: true, detail: true, create: true, update: true, remove: true },
@@ -189,7 +189,8 @@ export const api = {
     method: 'PUT',
     body: JSON.stringify({ role_id: Number(roleId) }),
   }),
-  vectorCollectionFile: (uuid) => requestFile(withId(endpoints.vectorCollections.path, uuid)),
+  vectorCollectionFile: (uuid) => requestFile(`${withId(endpoints.vectorCollections.path, uuid)}/download`),
+  deleteVectorCollection: (uuid) => request(withId(endpoints.vectorCollections.path, uuid), { method: 'DELETE' }),
   createVectorCollection: (payload) => request(endpoints.vectorCollections.path, {
     method: 'POST',
     body: JSON.stringify(payload),

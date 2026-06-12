@@ -122,7 +122,7 @@ Current flow:
 2. Upload Knowledge memastikan native collection row ada di `/api/vector-collections`.
 3. Upload original TXT/PDF ke `/api/vector-collections/{uuid}/upload`.
 4. Kirim konten yang sama ke Go backend `/vector-webhook` untuk chunking/vector indexing. Jika `collection_name` sudah punya vector lama, backend Go menghapus row lama di `n8n_vectors` lalu memasukkan chunk terbaru.
-5. Collection Knowledge menampilkan satu isi knowledge aktif per collection, membuka drawer detail dulu, lalu memisahkan preview file lewat Open File dari Download yang eksplisit.
+5. Collection Knowledge menampilkan satu isi knowledge aktif per collection, membuka drawer detail dulu, memisahkan preview file lewat Open File dari Download yang eksplisit, dan bisa menghapus native vector collection/file lewat `/api/vector-collections/{uuid}`.
 
 Label isi knowledge di Collection Knowledge dibaca dari `cmetadata` secara defensif. Format yang ditoleransi: path string biasa, JSON object, dan JSON array.
 

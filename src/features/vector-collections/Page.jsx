@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { ArrowDown, ArrowUp, ArrowUpDown, Boxes, ChevronLeft, ChevronRight, Download, ExternalLink, Search, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Boxes, ChevronLeft, ChevronRight, Download, ExternalLink, Search, Trash2, X } from 'lucide-react';
 import { api } from '../../api/client';
 import { PageHeader, StatusStrip } from '../../templates/components/PageHeader';
 import { routeByModule } from '../../config/resources';
 import { VectorCollectionPanel } from './components/VectorCollectionPanel';
 import { vectorCollectionFilesPage, vectorKnowledgeUploadPage } from './config';
 import { downloadFile, openFilePreview } from './fileActions';
-import { getVectorIndexFailure } from './indexStatus';
+import { clearVectorIndexFailure, getVectorIndexFailure } from './indexStatus';
 import { vectorCollectionFileLabel, vectorCollectionName, vectorCollectionSearchText, vectorCollectionTimeValue, vectorMetadataFiles } from './metadata';
 
 const timeFormatter = new Intl.DateTimeFormat('id-ID', {
@@ -208,6 +208,31 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
     }
   }
 
+  async function deleteSelectedCollection(item) {
+    if (!item?.uuid) return;
+    const name = vectorCollectionName(item);
+    const confirmed = window.confirm(`Hapus knowledge collection ${name}? Semantic Search registry tetap ada, tapi file/vector collection native akan dihapus.`);
+    if (!confirmed) return;
+
+    setFileAction(`delete-${item.uuid}`);
+    setStatusType('neutral');
+    setStatus(`Menghapus knowledge collection ${name}...`);
+
+    try {
+      await api.deleteVectorCollection(item.uuid);
+      clearVectorIndexFailure(name);
+      setSelectedFile(null);
+      setStatusType('success');
+      setStatus(`Knowledge collection ${name} berhasil dihapus. Semantic Search registry tetap tersedia.`);
+      await loadData?.();
+    } catch (error) {
+      setStatusType('error');
+      setStatus(error.message || 'Gagal menghapus knowledge collection.');
+    } finally {
+      setFileAction('');
+    }
+  }
+
   return (
     <div className="vector-page">
       <PageHeader
@@ -351,6 +376,10 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
 
             <div className="drawer-actions">
               <button type="button" className="secondary-button" onClick={() => setSelectedFile(null)}>Tutup</button>
+              <button type="button" className="primary-button danger-button" onClick={() => deleteSelectedCollection(selectedFile)} disabled={Boolean(fileAction) || !selectedFile.uuid}>
+                <Trash2 size={16} />
+                {fileAction === `delete-${selectedFile.uuid}` ? 'Deleting...' : 'Delete'}
+              </button>
               <button type="button" className="secondary-button" onClick={() => downloadSelectedFile(selectedFile)} disabled={Boolean(fileAction) || !selectedFile.uuid || !hasOriginalFile}>
                 <Download size={16} />
                 {fileAction === `download-${selectedFile.uuid}` ? 'Downloading...' : 'Download'}
