@@ -291,7 +291,7 @@ Current UI flow:
 2. Upload Knowledge lists names from Semantic Search and native `/api/vector-collections`.
 3. If selected name has no native vector collection row, UI creates one with `/api/vector-collections`.
 4. UI uploads the original TXT/PDF to `/api/vector-collections/{uuid}/upload`.
-5. UI then sends the same content to Go backend `/vector-webhook` so chunking/vector indexing runs without n8n.
+5. UI then sends the same content to Go backend `/vector-webhook` so chunking/vector indexing runs without n8n. Uploading to an existing `collection_name` replaces the old vector rows in `n8n_vectors` before inserting the latest chunks.
 6. Collection Files lists saved native vector collection rows in a paginated sortable table, displays upload time when a timestamp exists, opens a detail drawer first, then separates original file preview through Open File from explicit Download.
 
 `cmetadata` parsing is defensive in the frontend. Supported display formats include plain path strings, JSON objects, and JSON arrays. Swagger still exposes `GET /api/vector-collections/{uuid}` by UUID only, so per-file Open File behavior depends on how the backend maps that UUID to the saved original file.

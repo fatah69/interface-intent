@@ -128,6 +128,56 @@ func (s *Store) InsertVectors(ctx context.Context, collectionUUID string, record
 	return inserted, nil
 }
 
+// ReplaceVectors removes existing vector rows for a collection and inserts the
+// provided records in one transaction. The collection row itself is preserved so
+// existing UUID/cmetadata references from the frontend stay valid.
+func (s *Store) ReplaceVectors(ctx context.Context, collectionUUID string, records []VectorRecord) (int, int64, error) {
+	if len(records) == 0 {
+		return 0, 0, nil
+	}
+
+	tx, err := s.Pool.Begin(ctx)
+	if err != nil {
+		return 0, 0, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	deleteTag, err := tx.Exec(ctx,
+		`DELETE FROM n8n_vectors WHERE collection_id = $1::uuid`,
+		collectionUUID,
+	)
+	if err != nil {
+		return 0, 0, fmt.Errorf("delete existing vector rows: %w", err)
+	}
+
+	inserted := 0
+	for _, rec := range records {
+		metaJSON, err := json.Marshal(rec.Metadata)
+		if err != nil {
+			return inserted, deleteTag.RowsAffected(), fmt.Errorf("marshal metadata: %w", err)
+		}
+
+		vectorID := uuid.New().String()
+		embedding := pgvector.NewVector(rec.Embedding)
+
+		_, err = tx.Exec(ctx,
+			`INSERT INTO n8n_vectors (id, text, metadata, embedding, collection_id)
+			 VALUES ($1::uuid, $2, $3::jsonb, $4, $5::uuid)`,
+			vectorID, rec.Text, string(metaJSON), embedding, collectionUUID,
+		)
+		if err != nil {
+			return inserted, deleteTag.RowsAffected(), fmt.Errorf("insert vector row: %w", err)
+		}
+		inserted++
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return 0, 0, fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return inserted, deleteTag.RowsAffected(), nil
+}
+
 // IntentRow represents an intent+action row from the database.
 // This matches the n8n SQL query:
 //

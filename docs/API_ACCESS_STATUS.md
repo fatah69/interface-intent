@@ -82,8 +82,8 @@ Runtime slash behavior has previously differed from Swagger for `roles`, `usecas
 | --- | --- | --- | --- |
 | `POST` | `/chat-webhook` | AIWO chat service | Exposed by AI Chat |
 | `POST` | `/intent-sync` | AIWO intent cache reload | Exposed by Intents sync button |
-| `POST` | `/vector-webhook` | Go Vector Knowledge backend | Exposed by Vector Collections > Upload Knowledge for text/PDF indexing |
-| `PUT` | `/vector-webhook` | Go Vector Knowledge backend | Backend-compatible sync path; hidden from UI to avoid duplicate vector rows |
+| `POST` | `/vector-webhook` | Go Vector Knowledge backend | Exposed by Vector Collections > Upload Knowledge for text/PDF indexing. Replaces existing vector rows for the selected `collection_name`. |
+| `PUT` | `/vector-webhook` | Go Vector Knowledge backend | Backend-compatible sync path. Replaces existing vector rows for the selected `collection_name`; hidden from UI because it is an admin/maintenance sync action. |
 
 Do not run write smoke tests against `/vector-webhook` without a cleanup path. If a test write is unavoidable, use `docs/VECTOR_TEST_CLEANUP.md` as the cleanup reference.
 

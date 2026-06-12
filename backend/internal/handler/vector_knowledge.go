@@ -313,10 +313,10 @@ func (h *VectorKnowledgeHandler) PutSyncIntents(c *gin.Context) {
 		})
 	}
 
-	// Insert into PGVector
-	inserted, err := h.Store.InsertVectors(ctx, collectionUUID, records)
+	// Replace existing collection knowledge in PGVector.
+	inserted, deleted, err := h.Store.ReplaceVectors(ctx, collectionUUID, records)
 	if err != nil {
-		log.Printf("ERROR insert vectors: %v", err)
+		log.Printf("ERROR replace vectors: %v", err)
 		c.JSON(http.StatusInternalServerError, errorResponse{
 			ErrorCode: 500,
 			Message:   "Gagal memproses TEXT! AI mengalami kendala atau TEXT tidak terbaca.",
@@ -324,7 +324,7 @@ func (h *VectorKnowledgeHandler) PutSyncIntents(c *gin.Context) {
 		return
 	}
 
-	log.Printf("PUT sync: inserted %d vectors into collection %s", inserted, body.CollectionName)
+	log.Printf("PUT sync: replaced collection %s, deleted %d old vectors, inserted %d vectors", body.CollectionName, deleted, inserted)
 
 	c.JSON(http.StatusOK, successResponse{
 		ErrorCode: 0,
@@ -376,12 +376,12 @@ func (h *VectorKnowledgeHandler) processAndStore(
 		})
 	}
 
-	// 5. Insert into PGVector (replaces n8n Postgres PGVector Store)
-	inserted, err := h.Store.InsertVectors(ctx, collectionUUID, records)
+	// 5. Replace collection knowledge in PGVector.
+	inserted, deleted, err := h.Store.ReplaceVectors(ctx, collectionUUID, records)
 	if err != nil {
-		return fmt.Errorf("insert vectors: %w", err)
+		return fmt.Errorf("replace vectors: %w", err)
 	}
 
-	log.Printf("POST knowledge: inserted %d vectors into collection %s", inserted, collectionName)
+	log.Printf("POST knowledge: replaced collection %s, deleted %d old vectors, inserted %d vectors", collectionName, deleted, inserted)
 	return nil
 }

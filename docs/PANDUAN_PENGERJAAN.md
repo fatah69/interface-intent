@@ -121,12 +121,14 @@ Current flow:
 1. Buat atau pilih collection dari Semantic Search.
 2. Upload Knowledge memastikan native collection row ada di `/api/vector-collections`.
 3. Upload original TXT/PDF ke `/api/vector-collections/{uuid}/upload`.
-4. Kirim konten yang sama ke Go backend `/vector-webhook` untuk chunking/vector indexing.
+4. Kirim konten yang sama ke Go backend `/vector-webhook` untuk chunking/vector indexing. Jika `collection_name` sudah punya vector lama, backend Go menghapus row lama di `n8n_vectors` lalu memasukkan chunk terbaru.
 5. Collection Files menampilkan file collection yang tersimpan, membuka drawer detail dulu, lalu memisahkan preview file lewat Open File dari Download yang eksplisit.
 
 Label file di Collection Files dibaca dari `cmetadata` secara defensif. Format yang ditoleransi: path string biasa, JSON object, dan JSON array.
 
 Di ERD tidak ada FK antara `semantic_search` dan `n8n_vector_collections`. Hubungannya logical by name: `semantic_search.collection_name` harus sama dengan `n8n_vector_collections.name`.
+
+Delete Semantic Search hanya menghapus registry Swagger/API, bukan isi PGVector. Replace isi knowledge terjadi saat upload ulang ke `collection_name` yang sama melalui backend Go.
 
 Aksi Go Vector Knowledge backend yang tersedia:
 

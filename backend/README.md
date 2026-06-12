@@ -1,6 +1,6 @@
 # Vector Knowledge Backend
 
-Backend Go untuk vector collection indexing: validasi input, ekstraksi PDF, chunking, Gemini embedding, dan insert ke PostgreSQL PGVector.
+Backend Go untuk vector collection indexing: validasi input, ekstraksi PDF, chunking, Gemini embedding, dan replace isi knowledge di PostgreSQL PGVector.
 
 Frontend memanggil backend ini melalui proxy `/vector-webhook`. Backend juga expose path API baru untuk pengujian langsung.
 
@@ -60,6 +60,8 @@ POST /webhook/update-intent
 ```
 
 Path `/webhook/update-intent` disediakan sebagai path runtime yang dipakai proxy frontend `/vector-webhook`.
+
+Upload knowledge bersifat replace per `collection_name`: backend mempertahankan row `n8n_vector_collections`, menghapus semua row lama di `n8n_vectors` untuk collection tersebut, lalu memasukkan chunk/vector terbaru dalam satu transaksi.
 
 Text JSON:
 

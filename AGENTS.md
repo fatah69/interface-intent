@@ -66,7 +66,7 @@ Vector Collections migration decision:
 - Swagger `/api/vector-collections` is used to read/list/inspect collections and to create a native vector collection row when a selected Semantic Search collection does not yet exist there.
 - Swagger `GET /api/vector-collections/{uuid}` is used to view/download the original uploaded file stored from `cmetadata`.
 - Swagger `POST /api/vector-collections/{uuid}/upload` is used to upload the original TXT/PDF file so knowledge can be viewed as a coherent file, not only as vector chunks.
-- The Go backend `/vector-webhook` upload still runs after the Swagger upload so chunking/vector indexing workflow and AI search behavior remain intact without n8n.
+- The Go backend `/vector-webhook` upload still runs after the Swagger upload so chunking/vector indexing workflow and AI search behavior remain intact without n8n. Uploading to an existing `collection_name` replaces old rows in `n8n_vectors` for that collection before inserting the latest chunks.
 - Keep Semantic Search as the Action target registry because `action.semantic_search_id` still exists in the new ERD/Swagger.
 
 AI Chat remains separate from Swagger CRUD. It sends messages to the AIWO engine through `/chat-webhook` with `sessionId`, `chatInput`, and numeric `usecaseId`.
@@ -205,5 +205,4 @@ For API-related changes, verify Swagger live again and update `docs/API_ACCESS_S
 Keep `.env` out of git. During local development, leave `VITE_API_BASE_URL` empty so the app uses the Vite proxy. If deploying without Vite proxy, set `VITE_API_BASE_URL` to the real API base URL and handle CORS on the server.
 
 For internal production, prefer `npm run build` plus `npm start` or the Nginx config in `server-setup/`. Keep `VITE_API_BASE_URL=` empty in production when using the provided proxy server so browser requests stay relative to the app host.
-
 
