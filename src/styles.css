@@ -164,7 +164,7 @@ h3 { font-size: 17px; }
 .collection-files-panel { display: grid; }
 .collection-files-table-wrap { border-top: 1px solid #e5edf5; }
 .resource-vector-collection-files { table-layout: fixed; min-width: 900px; }
-.resource-vector-collection-files .col-row-number, .resource-vector-collection-files .cell-row-number { width: 58px; color: #64748b; text-align: right; }
+.resource-vector-collection-files .col-row-number, .resource-vector-collection-files .cell-row-number { width: 72px; color: #64748b; text-align: right; white-space: nowrap; overflow-wrap: normal; word-break: normal; }
 .resource-vector-collection-files .col-collection, .resource-vector-collection-files .cell-collection { width: 36%; }
 .resource-vector-collection-files .col-file, .resource-vector-collection-files .cell-file { width: 36%; }
 .resource-vector-collection-files .col-uploaded_at, .resource-vector-collection-files .cell-uploaded_at { width: 150px; }
