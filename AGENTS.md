@@ -69,7 +69,7 @@ Vector Collections migration decision:
 - The Go backend `/vector-webhook` upload still runs after the Swagger upload so chunking/vector indexing workflow and AI search behavior remain intact without n8n.
 - Keep Semantic Search as the Action target registry because `action.semantic_search_id` still exists in the new ERD/Swagger.
 
-AI Chat remains separate from Swagger CRUD. It sends messages to n8n through `/chat-webhook` with `chatInput`, `message`, and `sessionId`. The n8n workflow decides collection routing from prompt/chat logic.
+AI Chat remains separate from Swagger CRUD. It sends messages to the AIWO engine through `/chat-webhook` with `sessionId`, `chatInput`, and numeric `usecaseId`.
 
 ## Build, Test, and Development Commands
 
@@ -98,10 +98,10 @@ The web app currently implements these ERD modules:
 - Vector Collections: read/list Swagger vector collections for inspection, choose an existing Semantic Search collection, then `POST` text or `POST` PDF to the Go backend via `/vector-webhook`. Create collection names from the Semantic Search page.
 - Utilities: list and create only, matching Swagger.
 - Agent Utilities: create only, matching Swagger.
-- `n8n_vector_collections` and `n8n_vectors`: managed by the Vector Collections page through n8n PGVector until direct read endpoints exist.
-- AI Chat: sends real messages to the n8n webhook through `/chat-webhook`; it is not part of Swagger. The payload includes `chatInput`, `message`, and `sessionId`; the n8n workflow decides which collection to use from prompt/chat logic.
+- `n8n_vector_collections` and `n8n_vectors`: managed by the Go Vector Knowledge backend and PGVector until direct read endpoints exist.
+- AI Chat: sends real messages to the AIWO engine through `/chat-webhook`; it is not part of Swagger. The payload includes `sessionId`, `chatInput`, and numeric `usecaseId`.
 
-ERD note: `semantic_search.collection_name` and `n8n_vector_collections.name` are separate columns with no FK in the ERD. The UI keeps them aligned by using the same name: register the Semantic Search row first, then send that `collection_name` to n8n so PGVector uses the matching `n8n_vector_collections.name`.
+ERD note: `semantic_search.collection_name` and `n8n_vector_collections.name` are separate columns with no FK in the ERD. The UI keeps them aligned by using the same name: register the Semantic Search row first, then send that `collection_name` to the Go backend so PGVector uses the matching `n8n_vector_collections.name`.
 
 ## API Usage Status
 
@@ -148,7 +148,7 @@ Use React functional components and hooks. Keep module resource keys stable beca
 
 Keep pages feature-based. Add or change resource fields in the matching `src/features/<feature-name>/config.js` file and register it through `src/config/resources.js`. Each sidebar feature must have a `Page.jsx` that owns its layout and may call shared hooks/components from `src/templates/`. Avoid adding unrelated page state, modal logic, or table logic to `App.jsx`.
 
-Use descriptive field names matching API payloads, such as `agent_name`, `action_type`, `semantic_search_id`, and `collection_name`. JSON-like fields should be validated with `JSON.parse` before submit. For VectorDB uploads, create/select `collection_name` from Semantic Search first, then send that same value to n8n; keep multipart field name `file` for PDF uploads.
+Use descriptive field names matching API payloads, such as `agent_name`, `action_type`, `semantic_search_id`, and `collection_name`. JSON-like fields should be validated with `JSON.parse` before submit. For VectorDB uploads, create/select `collection_name` from Semantic Search first, then send that same value to the Go Vector Knowledge backend; keep multipart field name `file` for PDF uploads.
 
 ## Feature Development Pattern
 
@@ -205,7 +205,5 @@ For API-related changes, verify Swagger live again and update `docs/API_ACCESS_S
 Keep `.env` out of git. During local development, leave `VITE_API_BASE_URL` empty so the app uses the Vite proxy. If deploying without Vite proxy, set `VITE_API_BASE_URL` to the real API base URL and handle CORS on the server.
 
 For internal production, prefer `npm run build` plus `npm start` or the Nginx config in `server-setup/`. Keep `VITE_API_BASE_URL=` empty in production when using the provided proxy server so browser requests stay relative to the app host.
-
-
 
 

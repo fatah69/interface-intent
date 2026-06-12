@@ -162,7 +162,7 @@ Auth uses `POST /api/auth/login`, stores the Bearer token, loads profile from `G
 - Agent Utilities: create mapping only.
 - Roles: admin-only list and create.
 - Users: admin-only list, detail, create, update, assign role, delete, and usecase assignment.
-- Vector Collections: split into Upload Knowledge and Collection Files. Upload Knowledge selects a collection target, creates a native row when needed, uploads the original TXT/PDF file, and sends content to n8n indexing. Collection Files lists saved collection files in a paginated sortable table with upload time when the backend provides it, opens a detail drawer first, then separates original file preview through Open File from explicit Download.
+- Vector Collections: split into Upload Knowledge and Collection Files. Upload Knowledge selects a collection target, creates a native row when needed, uploads the original TXT/PDF file, and sends content to the Go Vector Knowledge backend for indexing. Collection Files lists saved collection files in a paginated sortable table with upload time when the backend provides it, opens a detail drawer first, then separates original file preview through Open File from explicit Download.
 - AI Chat: sends real messages to AIWO through `/chat-webhook`, with a selected `usecaseId`.
 
 ## Vector Collections Flow
@@ -235,6 +235,7 @@ Project documentation lives in `docs/`:
 - `docs/UI_UX_PLAN.md` - implemented UI/UX status and remaining optional polish.
 - `docs/PANDUAN_PENGERJAAN.md` - development guide.
 - `docs/VECTOR_TEST_CLEANUP.md` - cleanup note for accidental vector write tests.
+- `backend/README.md` - Go Vector Knowledge backend setup and endpoint notes.
 
 Root-level contributor instructions are in `AGENTS.md`. Production deployment files and server notes live in `server-setup/`.
 

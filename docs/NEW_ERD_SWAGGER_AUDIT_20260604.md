@@ -67,9 +67,9 @@ The frontend currently implements these Swagger-backed areas:
 - Agent Utilities: create only.
 - Roles: admin-only list and create.
 - Users: admin-only list, detail, create, update, assign role, delete, and usecase assignment.
-- Vector Collections: Upload Knowledge creates native collection rows when needed, uploads original TXT/PDF files, then calls n8n indexing. Collection Files lists saved native collection rows in a paginated sortable table, displays upload time when available, opens a detail drawer first, then separates original file preview through Open File from explicit Download.
+- Vector Collections: Upload Knowledge creates native collection rows when needed, uploads original TXT/PDF files, then calls Go backend indexing. Collection Files lists saved native collection rows in a paginated sortable table, displays upload time when available, opens a detail drawer first, then separates original file preview through Open File from explicit Download.
 
-AI Chat is not Swagger CRUD. It posts to n8n via `/chat-webhook` with `chatInput`, `message`, and `sessionId`.
+AI Chat is not Swagger CRUD. It posts to AIWO via `/chat-webhook` with `sessionId`, `chatInput`, and numeric `usecaseId`.
 
 ## Swagger Endpoint Set
 
@@ -101,7 +101,7 @@ Current codebase matches the ERD/Swagger direction:
 - `src/features/intents/config.js` includes required `usecase_id`.
 - `src/features/users/config.js` includes `role_id` and `usecase_ids`.
 - `src/api/client.js` includes auth, roles, usecases, users, and vector collection helpers.
-- `src/features/vector-collections/components/VectorCollectionPanel.jsx` uses the native vector collection API before sending content to n8n `/vector-webhook`.
+- `src/features/vector-collections/components/VectorCollectionPanel.jsx` uses the native vector collection API before sending content to Go backend `/vector-webhook`.
 - `src/features/vector-collections/metadata.js` parses `cmetadata` defensively for Collection Files display labels and search.
 - `src/features/ai-chat/Page.jsx` and the chat store keep chat session state separate from Swagger CRUD.
 
@@ -110,7 +110,7 @@ Current codebase matches the ERD/Swagger direction:
 - Do not expose public self-register on the login page. User creation belongs in admin-only Users management.
 - Keep Semantic Search as the Action-facing registry because `action.semantic_search_id` exists.
 - Keep native Vector Collections for inspect/readable original file storage.
-- Keep n8n `/vector-webhook` for chunking/vector indexing until backend replaces that workflow.
+- Keep Go backend `/vector-webhook` for chunking/vector indexing.
 - Do not add fake pages for `n8n_vectors`; there is no direct read CRUD endpoint for vector chunk rows.
 - Do not run write smoke tests against real API/vector endpoints without a cleanup path.
 
@@ -118,5 +118,5 @@ Current codebase matches the ERD/Swagger direction:
 
 - Utilities still do not have detail/update/delete endpoints in frontend because Swagger does not expose them.
 - Agent Utilities remains create-only because Swagger does not expose list/update/delete.
-- `n8n_vectors` remains backend/n8n-managed and is not directly inspectable as a table from the web UI.
+- `n8n_vectors` remains backend/PGVector-managed and is not directly inspectable as a table from the web UI.
 - Write-path testing needs manual approval and cleanup planning because API and PGVector data are real.

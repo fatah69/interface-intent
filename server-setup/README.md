@@ -23,7 +23,7 @@ Aplikasi tetap frontend React. `server-setup/prod-server.mjs` hanya serve static
 
 - Login sebagai user `litmas`.
 - Server default Node boleh v18, tetapi project harus dijalankan dengan `nvm use` supaya memakai Node 22.
-- Server bisa akses API target dan n8n target.
+- Server bisa akses API target, AIWO engine, PostgreSQL/PGVector database, dan Gemini API dari backend Go.
 - Port aplikasi `5173` terbuka di jaringan kantor.
 
 ## Setup Node dengan nvm

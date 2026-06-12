@@ -1,14 +1,14 @@
 # Vector Knowledge Backend
 
-Backend Go untuk menggantikan workflow n8n `update_vectordb_ultimate` pada bagian vector collection indexing: validasi input, ekstraksi PDF, chunking, Gemini embedding, dan insert ke PostgreSQL PGVector.
+Backend Go untuk vector collection indexing: validasi input, ekstraksi PDF, chunking, Gemini embedding, dan insert ke PostgreSQL PGVector.
 
-Frontend belum perlu diubah. Backend ini expose path API baru dan path kompatibel n8n supaya migrasi bisa dilakukan perlahan lewat proxy.
+Frontend memanggil backend ini melalui proxy `/vector-webhook`. Backend juga expose path API baru untuk pengujian langsung.
 
 ## Prasyarat
 
 - Go 1.23+.
 - PostgreSQL dengan extension `pgvector`.
-- Akses ke database yang sama dengan workflow n8n lama, terutama tabel `n8n_vector_collections` dan `n8n_vectors`.
+- Akses ke database PGVector yang menyimpan tabel legacy `n8n_vector_collections` dan `n8n_vectors`.
 - Google Gemini API key untuk embedding.
 
 ## Setup
@@ -59,7 +59,7 @@ POST /api/vector-knowledge
 POST /webhook/update-intent
 ```
 
-Path `/webhook/update-intent` disediakan agar backend Go bisa menggantikan n8n lama dengan perubahan proxy saja.
+Path `/webhook/update-intent` disediakan sebagai path runtime yang dipakai proxy frontend `/vector-webhook`.
 
 Text JSON:
 
@@ -97,9 +97,9 @@ curl -X PUT http://localhost:8082/api/vector-knowledge \
   }'
 ```
 
-## Konfigurasi n8n yang Direplikasi
+## Konfigurasi Indexing
 
-Nilai default backend mengikuti active node di `C:\Users\User\Downloads\update_vectordb_ultimate (2).json`, dengan satu override dari arahan migrasi terbaru: PDF max size menjadi 20 MB.
+Nilai default backend mengikuti konfigurasi workflow lama yang sudah dikonversi ke Go, dengan satu override dari arahan migrasi terbaru: PDF max size menjadi 20 MB.
 
 | Setting | Backend default |
 | --- | --- |
@@ -134,7 +134,7 @@ Sukses PUT:
 }
 ```
 
-Error mengikuti bentuk n8n:
+Error mengikuti bentuk kompatibel webhook lama:
 
 ```json
 {
@@ -161,17 +161,10 @@ backend/
 
 ## Integrasi Proxy Nanti
 
-Frontend saat ini tetap memakai `/vector-webhook`. Saat backend Go siap dipakai di environment target, proxy bisa diarahkan dari n8n lama:
-
-```text
-/vector-webhook -> http://103.140.90.131:5678/webhook/update-intent
-```
-
-menjadi backend Go:
+Frontend memakai `/vector-webhook`, lalu proxy mengarah ke backend Go:
 
 ```text
 /vector-webhook -> http://<go-backend-host>:8082/webhook/update-intent
 ```
 
 Swagger `/api/vector-collections` tetap terpisah dari migrasi ini kecuali nanti diputuskan untuk ikut dipindahkan.
-

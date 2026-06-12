@@ -1,6 +1,6 @@
 ﻿# Panduan Pengerjaan Web
 
-Dokumen ini menjelaskan cara mengembangkan Intent & Agent Management Console. Project ini adalah frontend React/Vite yang memakai REST API eksternal dan webhook n8n; tidak ada backend lokal di codebase ini.
+Dokumen ini menjelaskan cara mengembangkan Intent & Agent Management Console. Project ini berisi frontend React/Vite dan backend Go Vector Knowledge untuk indexing PGVector. REST CRUD utama tetap berasal dari API eksternal.
 
 ## Sumber Utama
 
@@ -83,7 +83,7 @@ Request API memakai relative path `/api/...` dan diproxy oleh Vite/prod server k
 /api/*          -> http://194.233.79.180:8080/api/*
 /chat-webhook   -> http://194.233.79.180:8081/api/v1/chat
 /intent-sync    -> http://194.233.79.180:8081/api/v1/update
-/vector-webhook -> http://103.140.90.131:5678/webhook/update-intent
+/vector-webhook -> http://127.0.0.1:8082/webhook/update-intent
 ```
 
 Navigasi dashboard memakai `react-router-dom`. Route utama saat ini adalah `/intents`, `/usecases`, `/actions`, `/external-data`, `/agents`, `/agent-utilities`, `/semantic-search`, `/utilities`, `/vector-collections/upload`, `/vector-collections/files`, `/roles`, `/users`, dan `/chat`. Root `/` redirect ke `/intents`, sedangkan `/vector-collections` redirect ke `/vector-collections/upload`.
@@ -121,14 +121,14 @@ Current flow:
 1. Buat atau pilih collection dari Semantic Search.
 2. Upload Knowledge memastikan native collection row ada di `/api/vector-collections`.
 3. Upload original TXT/PDF ke `/api/vector-collections/{uuid}/upload`.
-4. Kirim konten yang sama ke n8n `/vector-webhook` untuk chunking/vector indexing.
+4. Kirim konten yang sama ke Go backend `/vector-webhook` untuk chunking/vector indexing.
 5. Collection Files menampilkan file collection yang tersimpan, membuka drawer detail dulu, lalu memisahkan preview file lewat Open File dari Download yang eksplisit.
 
 Label file di Collection Files dibaca dari `cmetadata` secara defensif. Format yang ditoleransi: path string biasa, JSON object, dan JSON array.
 
 Di ERD tidak ada FK antara `semantic_search` dan `n8n_vector_collections`. Hubungannya logical by name: `semantic_search.collection_name` harus sama dengan `n8n_vector_collections.name`.
 
-Aksi n8n VectorDB yang tersedia:
+Aksi Go Vector Knowledge backend yang tersedia:
 
 ```text
 POST /vector-webhook  JSON: { type: "text", text, collection_name }
@@ -136,7 +136,7 @@ POST /vector-webhook  multipart/form-data: type=pdf, collection_name, file=<PDF>
 PUT  /vector-webhook  JSON: { collection_name }
 ```
 
-Endpoint `PUT /vector-webhook` tetap terdokumentasi untuk n8n, tetapi tidak diekspos di UI karena berisiko menambah row duplicate jika dipakai tanpa deduplication.
+Endpoint `PUT /vector-webhook` tetap terdokumentasi untuk sync backend, tetapi tidak diekspos di UI karena berisiko menambah row duplicate jika dipakai tanpa deduplication.
 
 Jangan test write endpoint `/vector-webhook` tanpa rencana cleanup. POST text/PDF akan menambah row ke `n8n_vectors`; cleanup SQL terdokumentasi di `docs/VECTOR_TEST_CLEANUP.md`.
 

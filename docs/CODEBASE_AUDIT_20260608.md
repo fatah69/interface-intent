@@ -98,7 +98,7 @@ The two-API flow is intentional and correct:
 
 Risk:
 
-If Swagger upload succeeds but n8n indexing fails, the original file can be visible in the web while the knowledge is not yet searchable through vector retrieval. The current single status line can make that distinction unclear.
+If Swagger upload succeeds but Go backend indexing fails, the original file can be visible in the web while the knowledge is not yet searchable through vector retrieval. The current status line separates file-save and knowledge-indexing progress.
 
 Result:
 
