@@ -1,5 +1,5 @@
-const fileNameKeys = ['filename', 'file_name', 'original_name', 'originalName', 'title', 'name', 'fileName'];
-const pathKeys = ['path', 'file_path', 'filePath', 'filepath', 'directory', 'url'];
+const fileNameKeys = ['filename', 'file_name', 'original_name', 'originalName', 'title', 'name', 'fileName', 'original_filename', 'originalFilename'];
+const pathKeys = ['path', 'file_path', 'filePath', 'filepath', 'directory', 'url', 'download_url', 'downloadUrl', 'file_url', 'fileUrl', 'full_path', 'fullPath', 'location'];
 const timeKeys = ['uploaded_at', 'uploadedAt', 'upload_time', 'uploadTime', 'updated_at', 'updatedAt', 'created_at', 'createdAt'];
 
 function parseJsonLike(value) {

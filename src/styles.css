@@ -167,12 +167,16 @@ h3 { font-size: 17px; }
 .resource-vector-collection-files .col-row-number, .resource-vector-collection-files .cell-row-number { width: 72px; color: #64748b; text-align: right; white-space: nowrap; overflow-wrap: normal; word-break: normal; }
 .resource-vector-collection-files .col-collection, .resource-vector-collection-files .cell-collection { width: 36%; }
 .resource-vector-collection-files .col-file, .resource-vector-collection-files .cell-file { width: 36%; }
-.resource-vector-collection-files .col-uploaded_at, .resource-vector-collection-files .cell-uploaded_at { width: 150px; }
+.resource-vector-collection-files .col-status, .resource-vector-collection-files .cell-status { width: 170px; }
 .resource-vector-collection-files .actions-col, .resource-vector-collection-files .row-actions { width: 130px; }
 .resource-vector-collection-files .cell-collection strong, .resource-vector-collection-files .cell-file span { overflow: hidden; display: -webkit-box; line-height: 1.35; white-space: normal; overflow-wrap: anywhere; word-break: break-word; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .resource-vector-collection-files .cell-file { min-width: 0; }
 .resource-vector-collection-files .cell-file span { max-width: 100%; vertical-align: middle; }
 .index-warning { display: inline-flex; align-items: center; min-height: 22px; margin-left: 8px; padding: 1px 7px; border: 1px solid #fed7aa; border-radius: 999px; background: #fff7ed; color: #c2410c; font-size: 11px; font-weight: 800; vertical-align: middle; }
+.status-pill { display: inline-flex; align-items: center; min-height: 24px; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.status-pill.success { border: 1px solid #bbf7d0; background: #f0fdf4; color: #166534; }
+.status-pill.neutral { border: 1px solid #d9e2ec; background: #f8fafc; color: #475569; }
+.status-pill.warning { border: 1px solid #fed7aa; background: #fff7ed; color: #c2410c; }
 .resource-vector-collection-files .secondary-button { min-height: 34px; padding: 0 10px; font-size: 12px; }
 .collection-file-metadata-list { display: grid; gap: 6px; margin: 0 0 14px; }
 .collection-file-metadata-list span { overflow: hidden; padding: 8px 10px; border: 1px solid #d9e2ec; border-radius: 8px; background: #f8fafc; color: #334155; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }

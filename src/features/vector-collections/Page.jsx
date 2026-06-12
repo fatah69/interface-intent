@@ -34,13 +34,6 @@ function SortIcon({ active, direction }) {
   return direction === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />;
 }
 
-function sortableDateValue(item) {
-  const value = vectorCollectionTimeValue(item);
-  if (!value) return 0;
-  const parsed = Date.parse(value);
-  return Number.isNaN(parsed) ? 0 : parsed;
-}
-
 function formatCollectionTime(item) {
   const value = vectorCollectionTimeValue(item);
   if (!value) return '-';
@@ -84,6 +77,13 @@ function vectorDetailTextItems(item) {
   return [...new Set(values.map((value) => String(value || '').trim()).filter(Boolean))].slice(0, 5);
 }
 
+function collectionFileStatus(item) {
+  const files = vectorMetadataFiles(item);
+  if (files.length) return { label: 'File tersimpan', type: 'success', rank: 2 };
+  if (item?.uuid) return { label: 'Metadata kosong', type: 'neutral', rank: 1 };
+  return { label: 'Belum ada file', type: 'neutral', rank: 0 };
+}
+
 function mergeCollectionDetail(item, payload) {
   if (Array.isArray(payload)) return { ...item, data: payload };
   if (Array.isArray(payload?.data)) return { ...item, ...payload, data: payload.data };
@@ -122,7 +122,7 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
   const [statusType, setStatusType] = useState('neutral');
   const [fileAction, setFileAction] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
-  const [sort, setSort] = useState({ column: 'uploaded_at', direction: 'desc' });
+  const [sort, setSort] = useState({ column: 'collection', direction: 'asc' });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const statusWarning = apiStatus.includes('gagal') || apiStatus.includes('belum');
@@ -141,7 +141,7 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
       const valueByColumn = {
         collection: [vectorCollectionName(left), vectorCollectionName(right)],
         file: [vectorCollectionFileLabel(left) || vectorCollectionName(left), vectorCollectionFileLabel(right) || vectorCollectionName(right)],
-        uploaded_at: [sortableDateValue(left), sortableDateValue(right)],
+        status: [collectionFileStatus(left).rank, collectionFileStatus(right).rank],
       };
       const [leftValue, rightValue] = valueByColumn[sort.column] || valueByColumn.collection;
       const result = compareValues(leftValue, rightValue);
@@ -220,11 +220,6 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
 
   async function viewFile(item) {
     if (!item?.uuid) return;
-    if (!vectorMetadataFiles(item).length) {
-      setStatusType('error');
-      setStatus(`File asli untuk ${vectorCollectionName(item)} belum tersimpan. Upload ulang knowledge ke collection ini supaya bisa dibuka.`);
-      return;
-    }
     setFileAction(`view-${item.uuid}`);
     setStatusType('neutral');
     setStatus('Membuka file di tab baru...');
@@ -244,11 +239,6 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
 
   async function downloadSelectedFile(item) {
     if (!item?.uuid) return;
-    if (!vectorMetadataFiles(item).length) {
-      setStatusType('error');
-      setStatus(`File asli untuk ${vectorCollectionName(item)} belum tersimpan. Upload ulang knowledge ke collection ini supaya bisa didownload.`);
-      return;
-    }
     setFileAction(`download-${item.uuid}`);
     setStatusType('neutral');
     setStatus('Menyiapkan download file...');
@@ -316,7 +306,7 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
                 <th className="col-row-number">No</th>
                 <th className="col-collection"><SortHeader column="collection" label="Collection" /></th>
                 <th className="col-file"><SortHeader column="file" label="Isi Knowledge" /></th>
-                <th className="col-uploaded_at"><SortHeader column="uploaded_at" label="Uploaded" /></th>
+                <th className="col-status"><SortHeader column="status" label="Status" /></th>
                 <th className="actions-col">Actions</th>
               </tr>
             </thead>
@@ -326,15 +316,18 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
                 const files = vectorMetadataFiles(item);
                 const fileLabel = vectorCollectionFileLabel(item);
                 const indexFailure = getVectorIndexFailure(name);
+                const fileStatus = collectionFileStatus(item);
                 return (
                   <tr key={item.uuid || name} className="clickable-row" onClick={() => openCollectionDetail(item)}>
                     <td className="cell-row-number">{startIndex + index + 1}</td>
                     <td className="cell-collection"><strong title={name}>{name}</strong></td>
-                    <td className="cell-file" title={files.map((entry) => entry.label).join(', ') || 'Upload ulang untuk menyimpan file asli'}>
-                      <span>{files.length > 1 ? `${files.length} file tersimpan` : fileLabel || 'File asli belum tersimpan'}</span>
+                    <td className="cell-file" title={files.map((entry) => entry.label).join(', ') || 'Metadata file dari API kosong'}>
+                      <span>{files.length > 1 ? `${files.length} file tersimpan` : fileLabel || 'Metadata file kosong'}</span>
                       {indexFailure && <small className="index-warning">Indexing gagal</small>}
                     </td>
-                    <td className="cell-uploaded_at">{formatCollectionTime(item)}</td>
+                    <td className="cell-status">
+                      <span className={`status-pill ${indexFailure ? 'warning' : fileStatus.type}`}>{indexFailure ? 'Indexing gagal' : fileStatus.label}</span>
+                    </td>
                     <td className="row-actions" onClick={(event) => event.stopPropagation()}>
                       <button className="secondary-button" type="button" onClick={() => openCollectionDetail(item)} disabled={loading || !item.uuid || Boolean(fileAction)}>{fileAction === `detail-${item.uuid}` ? 'Loading...' : 'Detail'}</button>
                     </td>
@@ -393,6 +386,7 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
         (() => {
           const selectedFiles = vectorMetadataFiles(selectedFile);
           const hasOriginalFile = selectedFiles.length > 0;
+          const canRequestOriginalFile = Boolean(selectedFile.uuid);
           const indexFailure = getVectorIndexFailure(vectorCollectionName(selectedFile));
           const detailTexts = vectorDetailTextItems(selectedFile);
           return (
@@ -408,7 +402,7 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
 
             <dl className="detail-list">
               <div><dt>Collection</dt><dd>{vectorCollectionName(selectedFile)}</dd></div>
-              <div><dt>Isi knowledge</dt><dd>{vectorCollectionFileLabel(selectedFile) || 'File asli belum tersimpan'}</dd></div>
+              <div><dt>Isi knowledge</dt><dd>{vectorCollectionFileLabel(selectedFile) || 'Metadata file kosong'}</dd></div>
               <div><dt>Status</dt><dd>{selectedFile.uuid ? 'Tersimpan' : 'Belum tersimpan'}</dd></div>
               <div><dt>Uploaded</dt><dd>{formatCollectionTime(selectedFile)}</dd></div>
               <div><dt>UUID</dt><dd>{selectedFile.uuid || '-'}</dd></div>
@@ -432,7 +426,7 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
 
             <div className="hint-box collection-file-hint">
               <ExternalLink size={16} />
-              <span>{hasOriginalFile ? 'File asli hanya dibuka setelah tombol Open File ditekan.' : 'File asli belum tersedia. Upload ulang knowledge ke collection ini untuk menyimpan file TXT/PDF yang bisa dibuka atau didownload.'}</span>
+              <span>{hasOriginalFile ? 'File asli hanya dibuka setelah tombol Open File ditekan.' : 'Metadata file belum tersedia dari API list/detail. Open atau Download tetap akan mencoba endpoint file berdasarkan UUID.'}</span>
             </div>
 
             {indexFailure && (
@@ -447,11 +441,11 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
                 <Trash2 size={16} />
                 {fileAction === `delete-${selectedFile.uuid}` ? 'Deleting...' : 'Delete'}
               </button>
-              <button type="button" className="secondary-button" onClick={() => downloadSelectedFile(selectedFile)} disabled={Boolean(fileAction) || !selectedFile.uuid || !hasOriginalFile}>
+              <button type="button" className="secondary-button" onClick={() => downloadSelectedFile(selectedFile)} disabled={Boolean(fileAction) || !canRequestOriginalFile}>
                 <Download size={16} />
                 {fileAction === `download-${selectedFile.uuid}` ? 'Downloading...' : 'Download'}
               </button>
-              <button type="button" className="primary-button" onClick={() => viewFile(selectedFile)} disabled={Boolean(fileAction) || !selectedFile.uuid || !hasOriginalFile}>
+              <button type="button" className="primary-button" onClick={() => viewFile(selectedFile)} disabled={Boolean(fileAction) || !canRequestOriginalFile}>
                 <ExternalLink size={16} />
                 {fileAction === `view-${selectedFile.uuid}` ? 'Opening...' : 'Open File'}
               </button>
