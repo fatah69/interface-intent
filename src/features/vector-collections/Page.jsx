@@ -84,6 +84,14 @@ function vectorDetailTextItems(item) {
   return [...new Set(values.map((value) => String(value || '').trim()).filter(Boolean))].slice(0, 5);
 }
 
+function mergeCollectionDetail(item, payload) {
+  if (Array.isArray(payload)) return { ...item, data: payload };
+  if (Array.isArray(payload?.data)) return { ...item, ...payload, data: payload.data };
+
+  const detail = unwrapDetailPayload(payload);
+  return { ...item, ...detail, uuid: detail.uuid || item.uuid };
+}
+
 export function VectorCollectionsPage() {
   return <Navigate to={routeByModule.vectorKnowledgeUpload} replace />;
 }
@@ -199,8 +207,7 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
 
     try {
       const payload = await api.vectorCollectionDetail(item.uuid);
-      const detail = unwrapDetailPayload(payload);
-      setSelectedFile({ ...item, ...detail, uuid: detail.uuid || item.uuid });
+      setSelectedFile(mergeCollectionDetail(item, payload));
       setStatus('');
     } catch (error) {
       setSelectedFile(item);
