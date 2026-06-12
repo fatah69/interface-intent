@@ -6,7 +6,7 @@ import { PageHeader, StatusStrip } from '../../templates/components/PageHeader';
 import { routeByModule } from '../../config/resources';
 import { VectorCollectionPanel } from './components/VectorCollectionPanel';
 import { vectorCollectionFilesPage, vectorKnowledgeUploadPage } from './config';
-import { downloadFile, openFilePreview } from './fileActions';
+import { downloadFile, openFilePreview, reserveFilePreviewTab } from './fileActions';
 import { clearVectorIndexFailure, getVectorIndexFailure } from './indexStatus';
 import { vectorCollectionFileLabel, vectorCollectionName, vectorCollectionSearchText, vectorCollectionTimeValue, vectorMetadataFiles } from './metadata';
 
@@ -220,16 +220,27 @@ export function VectorCollectionFilesPage({ data, apiStatus, loading, loadData }
 
   async function viewFile(item) {
     if (!item?.uuid) return;
+    let previewWindow;
+
+    try {
+      previewWindow = reserveFilePreviewTab();
+    } catch (error) {
+      setStatusType('error');
+      setStatus(error.message || 'Tab baru tidak bisa dibuka.');
+      return;
+    }
+
     setFileAction(`view-${item.uuid}`);
     setStatusType('neutral');
     setStatus('Membuka file di tab baru...');
 
     try {
       const file = await api.vectorCollectionFile(item.uuid);
-      openFilePreview(file);
+      openFilePreview(file, previewWindow);
       setStatusType('success');
       setStatus(`File dibuka di tab baru: ${vectorCollectionName(item)}.`);
     } catch (error) {
+      previewWindow?.close();
       setStatusType('error');
       setStatus(error.message || 'Gagal membuka file collection.');
     } finally {
