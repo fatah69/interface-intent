@@ -47,6 +47,51 @@ which node
 
 `node -v` harus menunjukkan Node 22 sesuai `.nvmrc`. `which node` sebaiknya mengarah ke `/home/litmas/.nvm/versions/node/.../bin/node`, bukan `/usr/bin/node`.
 
+## Setup Go Lokal dengan `use-go-1.23`
+
+Backend Go Vector Knowledge membutuhkan Go official 1.21+; gunakan Go 1.23 lokal di home user `litmas` supaya tidak mengubah Go global/mentor. Server default pernah memakai `/usr/bin/go` dari `gccgo` 1.18, dan itu tidak cukup karena dependency backend memakai standard library `slices`.
+
+Install Go official lokal jika belum ada:
+
+```bash
+cd /tmp
+wget https://go.dev/dl/go1.23.12.linux-amd64.tar.gz
+mkdir -p ~/sdk
+rm -rf ~/sdk/go1.23.12
+tar -C ~/sdk -xzf go1.23.12.linux-amd64.tar.gz
+mv ~/sdk/go ~/sdk/go1.23.12
+```
+
+Buat command mirip `nvm use`. Copy satu blok ini sekaligus; jangan beri spasi sebelum `EOF`:
+
+```bash
+cat >> ~/.bashrc <<'EOF'
+
+use-go-1.23() {
+  export PATH="$HOME/sdk/go1.23.12/bin:${PATH//:$HOME\/sdk\/go1.23.12\/bin/}"
+  hash -r
+  go version
+  which go
+}
+EOF
+source ~/.bashrc
+```
+
+Pakai hanya saat perlu build backend ini:
+
+```bash
+use-go-1.23
+```
+
+Expected:
+
+```text
+go version go1.23.12 linux/amd64
+/home/litmas/sdk/go1.23.12/bin/go
+```
+
+Kalau terminal masuk prompt `>` saat membuat function, berarti heredoc belum tertutup. Tekan `Ctrl+C`, lalu ulang blok `cat >> ~/.bashrc ... EOF` dengan `EOF` persis di awal baris.
+
 ## Git Workflow
 
 Push dilakukan dari laptop/local development, bukan dari server production.
@@ -96,6 +141,87 @@ pm2 logs interface-intent --lines 30
 ```
 
 Keluar dari log dengan `Ctrl + C`.
+
+## Deploy / Update Backend Go Vector Knowledge
+
+Jalankan dari server sebagai user `litmas` setelah `git pull` branch terbaru:
+
+```bash
+cd ~/interface-intent/interface-intent-migrate/backend
+use-go-1.23
+go version
+which go
+```
+
+Jika `go test` atau `go build` meminta tidy, jalankan:
+
+```bash
+go mod tidy
+```
+
+Build backend:
+
+```bash
+go test ./...
+mkdir -p bin
+go build -o bin/vector-knowledge-backend ./cmd/server
+ls -lh bin/vector-knowledge-backend
+```
+
+Pastikan file env backend tersedia dan tidak world-readable:
+
+```bash
+test -f .env && echo ".env exists" || echo ".env missing"
+chmod 600 .env
+```
+
+Jika `.env missing`, upload dari laptop/local:
+
+```powershell
+scp ".\backend\.env" litmas@172.16.210.244:~/interface-intent/interface-intent-migrate/backend/.env
+```
+
+Start atau restart backend dengan PM2:
+
+```bash
+pm2 delete vector-knowledge-backend 2>/dev/null || true
+pm2 start ./bin/vector-knowledge-backend --name vector-knowledge-backend --cwd "$(pwd)"
+pm2 save
+```
+
+Validasi backend:
+
+```bash
+curl http://127.0.0.1:8082/health
+```
+
+Expected:
+
+```json
+{"service":"vector-knowledge-backend","status":"healthy"}
+```
+
+Jika backend gagal start, cek log:
+
+```bash
+pm2 logs vector-knowledge-backend --lines 80
+```
+
+Setelah backend healthy, deploy/restart frontend seperti bagian `Deploy Update Ringkas`, lalu validasi proxy vector tanpa token:
+
+```bash
+curl -i -X POST http://127.0.0.1:5173/vector-webhook \
+  -H "Content-Type: application/json" \
+  -d '{"type":"invalid"}'
+```
+
+Expected tanpa login token:
+
+```text
+HTTP/1.1 401 Unauthorized
+```
+
+Jika hasilnya `502`, backend Go belum running atau `.env.production` frontend belum mengarah ke `VECTOR_BACKEND_TARGET=http://127.0.0.1:8082`.
 
 ## First Run dengan PM2
 
